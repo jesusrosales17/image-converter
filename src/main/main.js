@@ -10,8 +10,7 @@ function createWindow() {
         },
     })
 
-    windows.loadFile("index.html");
-    
+    windows.loadURL('http://localhost:5173/');  
 }
 
 
