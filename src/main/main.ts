@@ -1,12 +1,15 @@
-const { BrowserWindow, app } = require("electron");
+import { BrowserWindow, app } from "electron";
+import * as path from "path";
 
-function createWindow() {
+function createWindow(): void {
     const windows = new BrowserWindow({
         width: 800,
-        height: 600,
+        title: "Convertidor de imagenes",
+        height: 500,
         webPreferences: {
-            nodeIntegration: true,
+            nodeIntegration: false,
             contextIsolation: true,
+            preload: path.join(__dirname, '../preload/preload.js')
         },
     })
 
