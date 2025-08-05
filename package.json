@@ -1,15 +1,25 @@
 {
   "name": "convertidor_imagenes",
   "version": "1.0.0",
-  "main": "main.js",
+  "main": "dist/main/main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "electron ./src/main/main.js"
+    "build": "tsc",
+    "dev": "concurrently \"tsc --watch\"  \"nodemon --watch dist --exec electron ./dist/main/main.js\"",
+    "watch": "tsc --watch",
+    "clean": "rm -rf dist"
   },
   "author": "",
   "license": "ISC",
   "description": "",
   "devDependencies": {
-    "electron": "^37.2.5"
+    "@types/node": "^20.0.0",
+    "concurrently": "^9.2.0",
+    "electron": "^37.2.5",
+    "nodemon": "^3.1.10",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "ts-node": "^10.9.2"
   }
 }
