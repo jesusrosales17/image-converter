@@ -3,9 +3,10 @@ import * as path from "path";
 
 function createWindow(): void {
     const windows = new BrowserWindow({
-        width: 800,
+        width: 1000,
         title: "Convertidor de imagenes",
-        height: 500,
+        height: 600,
+        autoHideMenuBar: true,
         webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
