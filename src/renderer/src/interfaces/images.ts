@@ -19,11 +19,11 @@ export type ImageFile = {
     progress?: number; // porcentaje de progreso
 }
 
-export type OutputFormal = "webp" | "avif" | "jpeg" | "png"  | "tiff";
+export type OutputFormat = "webp" | "avif" | "jpeg" | "png"  | "tiff";
 
 export interface ImageStore {
     images: ImageFile[];
-    outputFormat: OutputFormal;
+    outputFormat: OutputFormat;
     isConverting: boolean;
     quality: number;
     outputFolder: string;
@@ -33,7 +33,7 @@ export interface ImageStore {
     setIsConverting: (isConverting: boolean) => void;
     setQuality: (quality: number) => void;
     setOutputFolder: (folder: string) => void;
-    setOutputFormat: (format: OutputFormal) => void;
+    setOutputFormat: (format: OutputFormat) => void;
     setImageToShow: (image: string) => void;
 
 

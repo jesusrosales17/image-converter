@@ -134,7 +134,7 @@ ipcMain.handle('convert:images', async (_, { images, outputFormat, quality, outp
                 case 'png':
                     sharpInstance = sharpInstance.png({
                         quality,
-                        compressionLevel: 9,
+                        compressionLevel: 6,
                         progressive: true
                     });
                     break;

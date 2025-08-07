@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from "../ui/alert";
 import { useImageStore } from "@/store/useImageStore";
 import { useFileDialog } from "@/hooks/useFileDialog";
 import { ButtonStartConversion } from "./ButtonStartConversion";
+import type { OutputFormat } from "@/interfaces/images";
 
 export const ImageSettings = () => {
   const {outputFormat, setOutputFormat, quality, setQuality, outputFolder} = useImageStore();
@@ -22,7 +23,7 @@ export const ImageSettings = () => {
         {/* Formato de Salida */}
         <div className="space-y-2 mb-4">
           <Label className="text-sm">Formato de salida</Label>
-          <Select value={outputFormat} onValueChange={() => setOutputFormat}>
+          <Select value={outputFormat} onValueChange={(value) => setOutputFormat(value as OutputFormat)}>
             <SelectTrigger className="h-9">
               <SelectValue />
             </SelectTrigger>

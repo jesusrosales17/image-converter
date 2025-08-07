@@ -145,7 +145,7 @@ electron_1.ipcMain.handle('convert:images', async (_, { images, outputFormat, qu
                 case 'png':
                     sharpInstance = sharpInstance.png({
                         quality,
-                        compressionLevel: 9,
+                        compressionLevel: 6,
                         progressive: true
                     });
                     break;
