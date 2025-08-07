@@ -2,13 +2,14 @@
 "use client"
 
 
-import { useState } from "react"
+import { use, useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Header } from "./components/template/Header"
 import { ImageList } from "./components/imageConverter/ImageList"
 import { ImageSettings } from "./components/imageConverter/ImageSettings"
 import { InputImageUpload } from "./components/imageConverter/InputImageUpload"
+import { useImageStore } from "./store/useImageStore"
 
 interface ImageFile {
   id: string
@@ -22,11 +23,10 @@ interface ImageFile {
 }
 
 export default function App() {
+  const {images} = useImageStore();
   const [isProcessing, setIsProcessing] = useState(false)
   const [overallProgress, setOverallProgress] = useState(0)
-
-   
-
+console.log(images)
    return (
     <div className="h-screen bg-gray-50 flex flex-col">
       {/* Header compacto */}

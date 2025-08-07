@@ -15,7 +15,11 @@ export const useImageStore = create<ImageStore>((set) => ({
     setOutputFolder: (folder: string) => set({ outputFolder: folder }),
     setOutputFormat: (format: OutputFormal) => set({ outputFormat: format }),
 
-    addImage: (image) => set((state) => ({ images: [...state.images, image] })),
+    addImage: (image) => set((state) => ({ 
+        // evitamos duplicados
+        images: state.images.some(img => img.path === image.path) ? state.images : [...state.images, image]
+        
+    })),
     removeImage: (path) => set((state) => ({ images: state.images.filter((img) => img.path !== path) })),
     clearImages: () => set({ images: [] }),
 }));

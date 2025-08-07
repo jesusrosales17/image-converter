@@ -9,7 +9,7 @@ export const InputImageUpload = () => {
   return (
     <Card className="flex-shrink-0">
       <CardContent className="p-4">
-        <button onClick={openSingleFileDialog} className="cursor-pointer w-full">
+        <div onClick={openSingleFileDialog} className="cursor-pointer w-full">
 
           <div
             className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
@@ -68,7 +68,7 @@ export const InputImageUpload = () => {
               </Button>
             </div>
           </div>
-        </button>
+        </div>
       </CardContent>
     </Card>
   );
