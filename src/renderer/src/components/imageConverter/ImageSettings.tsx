@@ -2,12 +2,11 @@ import { Slider } from "../ui/slider";
 import { Label } from "../ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Separator } from "../ui/separator";
-import { AlertCircle, FolderOpen, Play } from "lucide-react";
+import { AlertCircle, FolderOpen } from "lucide-react";
 import { Button } from "../ui/button";
 import { Alert, AlertDescription } from "../ui/alert";
 import { useImageStore } from "@/store/useImageStore";
 import { useFileDialog } from "@/hooks/useFileDialog";
-import { useConverter } from "@/hooks/useConverter";
 import { ButtonStartConversion } from "./ButtonStartConversion";
 
 export const ImageSettings = () => {
