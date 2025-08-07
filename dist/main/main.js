@@ -106,7 +106,7 @@ electron_1.ipcMain.handle('dialog:openFolderForOutput', async (_, options) => {
     }
     return '';
 });
-electron_1.ipcMain.handle('convert:images', async (_, { images, outputFormat, quality, outputFolder }) => {
+electron_1.ipcMain.handle('convert:images', async (event, { images, outputFormat, quality, outputFolder }) => {
     let convertedCount = 0;
     let failedCount = 0;
     let results = [];
@@ -120,16 +120,35 @@ electron_1.ipcMain.handle('convert:images', async (_, { images, outputFormat, qu
     if (!fs_1.default.existsSync(outputFolder)) {
         throw new Error("La carpeta de salida no existe");
     }
+    // enviar el evento de inicio de la conversion
+    console.log('Iniciando conversión de imágenes...');
+    event.sender.send('conversion:started', {
+        total: images.length,
+        outputFormat,
+        outputFolder
+    });
     // procesar las imagenes una por una
-    for (const image of images) {
+    for (let i = 0; i < images.length; i++) {
+        const image = images[i];
         try {
-            // simular error con la primera imagen
+            // ✅ Arreglar typo: convension → conversion
+            event.sender.send('conversion:imageStarted', {
+                imagePath: image.path,
+                currentIndex: i + 1,
+                total: images.length
+            });
             const inputPath = image.path;
             const baseName = path.basename(inputPath, path.extname(inputPath));
             const outputPath = path.join(outputFolder, `${baseName}.${outputFormat}`);
             let sharpInstance = (0, sharp_1.default)(inputPath);
             switch (outputFormat) {
-                case 'jpeg':
+                case 'jpeg': // ✅ Agregar soporte para 'jpg'
+                    sharpInstance = sharpInstance.jpeg({
+                        quality,
+                        progressive: true,
+                        mozjpeg: true
+                    });
+                case 'jpg': // ✅ Agregar soporte para 'jpg'
                     sharpInstance = sharpInstance.jpeg({
                         quality,
                         progressive: true,
@@ -171,6 +190,14 @@ electron_1.ipcMain.handle('convert:images', async (_, { images, outputFormat, qu
                 success: true
             });
             convertedCount++;
+            // ✅ Evento de imagen completada
+            event.sender.send('conversion:imageCompleted', {
+                imagePath: inputPath,
+                outputPath,
+                success: true,
+                currentIndex: i + 1,
+                total: images.length
+            });
             console.log(`✅ Converted: ${inputPath} → ${outputPath}`);
         }
         catch (error) {
@@ -181,9 +208,26 @@ electron_1.ipcMain.handle('convert:images', async (_, { images, outputFormat, qu
                 error: errorMessage
             });
             failedCount++;
+            // ✅ Evento de imagen con error
+            event.sender.send('conversion:imageError', {
+                imagePath: image.path,
+                error: errorMessage,
+                success: false,
+                currentIndex: i + 1,
+                total: images.length
+            });
             console.error(`❌ Failed to convert ${image.path}:`, error);
         }
     }
+    // enviar el evento de finalizacion de la conversion
+    console.log('🏁 Enviando evento de conversión finalizada...');
+    console.log(`📊 Estadísticas: ${convertedCount} exitosas, ${failedCount} fallidas de ${images.length} total`);
+    event.sender.send('conversion:finished', {
+        total: images.length,
+        convertedCount,
+        failedCount,
+        results
+    });
     return {
         success: failedCount === 0,
         convertedCount,

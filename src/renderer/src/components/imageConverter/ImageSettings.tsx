@@ -29,7 +29,7 @@ export const ImageSettings = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="webp">WebP</SelectItem>
-              <SelectItem value="jpg">JPEG</SelectItem>
+              <SelectItem value="jpg">JPG</SelectItem>
               <SelectItem value="png">PNG</SelectItem>
               <SelectItem value="avif">AVIF</SelectItem>
               <SelectItem value="tiff">TIFF</SelectItem>

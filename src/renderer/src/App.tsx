@@ -11,6 +11,7 @@ import { ImageSettings } from "./components/imageConverter/ImageSettings"
 import { InputImageUpload } from "./components/imageConverter/InputImageUpload"
 import { useImageStore } from "./store/useImageStore"
 import { Toaster } from "sonner"
+import { useConversionEvents } from "./hooks/useConversionEvents"
 
 interface ImageFile {
   id: string
@@ -24,9 +25,7 @@ interface ImageFile {
 }
 
 export default function App() {
-  const {images} = useImageStore();
-  const [isProcessing, setIsProcessing] = useState(false)
-  const [overallProgress, setOverallProgress] = useState(0)
+  useConversionEvents();
    return (
     <div className="h-screen bg-gray-50 flex flex-col">
       {/* Header compacto */}
@@ -41,19 +40,7 @@ export default function App() {
        
           <ImageTable />
           {/* Progreso General */}
-          {isProcessing && (
-            <Card className="flex-shrink-0">
-              <CardContent className="p-3">
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Progreso general</span>
-                    <span>{Math.round(overallProgress)}%</span>
-                  </div>
-                  <Progress value={overallProgress} className="h-2" />
-                </div>
-              </CardContent>
-            </Card>
-          )}
+        
         </div>
 
        

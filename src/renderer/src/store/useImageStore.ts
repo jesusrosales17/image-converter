@@ -1,4 +1,4 @@
-import type { ImageFile, ImageStore, OutputFormal } from '@/interfaces/images';
+import type { ImageFile, ImageStore, OutputFormat } from '@/interfaces/images';
 import { create } from 'zustand';
 
 
@@ -14,9 +14,14 @@ export const useImageStore = create<ImageStore>((set) => ({
     setIsConverting: (isConverting: boolean) => set({ isConverting }),
     setQuality: (quality: number) => set({ quality }),
     setOutputFolder: (folder: string) => set({ outputFolder: folder }),
-    setOutputFormat: (format: OutputFormal) => set({ outputFormat: format }),
+    setOutputFormat: (format: OutputFormat) => set({ outputFormat: format }),
 
-    addImage: (image) => set((state) => ({ 
+    updateImageStatus: (path, status,progress) => set((state) => ({
+        images: state.images.map((img) =>
+            img.path === path ? { ...img, status, progress } : img
+        )
+    })),
+    addImage: (image) => set((state) => ({
         // evitamos duplicados
         images: state.images.some(img => img.path === image.path) ? state.images : [...state.images, image]
         

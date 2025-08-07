@@ -29,6 +29,7 @@ export interface ImageStore {
     setOutputFolder: (folder: string) => void;
     setOutputFormat: (format: OutputFormat) => void;
     setImageToShow: (image: string) => void;
+    updateImageStatus: (path: string, status: StatusImage, progress: number) => void;
     addImage: (image: ImageFile) => void;
     removeImage: (path: string) => void;
     clearImages: () => void;
