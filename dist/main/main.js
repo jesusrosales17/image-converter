@@ -61,18 +61,39 @@ electron_1.ipcMain.handle('dialog:open', async (_, options) => {
     const files = await Promise.all(result.filePaths.map(async (filePath) => {
         const stat = fs_1.default.statSync(filePath); // para obtener el tamaño
         const type = (0, image_1.getImageExtension)(filePath);
-        const preview = `data:image/${type};base64,${fs_1.default.readFileSync(filePath, { encoding: 'base64' })}`;
         return {
             path: filePath,
             name: path.basename(filePath),
             size: stat.size,
             type: type,
-            preview: preview,
             status: images_1.StatusImage.pending,
             progress: 0
         };
     }));
     return { canceled: result.canceled, files };
+});
+// generar una vista previa de la imagen en base 64
+electron_1.ipcMain.handle('imagePreview:get', async (_, filePath) => {
+    try {
+        if (fs_1.default.existsSync(filePath)) {
+            const image = electron_1.nativeImage.createFromPath(filePath);
+            return {
+                preview: image.toDataURL(),
+                name: path.basename(filePath)
+            };
+        }
+        else {
+            throw new Error('File does not exist');
+        }
+    }
+    catch (error) {
+        console.error('Error loading image preview:', error);
+        return {
+            preview: '',
+            error: "Error al obtener la vista previa de la imagen",
+            name: path.basename(filePath)
+        };
+    }
 });
 electron_1.app.whenReady().then(() => {
     // crear la ventana principal

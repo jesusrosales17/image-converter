@@ -4,12 +4,14 @@ import { Card, CardHeader, CardTitle, CardContent } from "../ui/card";
 import { ImageIcon } from "lucide-react";
 import { useImageStore } from "@/store/useImageStore";
 import { ImageTableRow } from "./ImageTableRow";
+import { ImagePreview } from "./ImagePreview";
 
-export const ImageList = () => {
+export const ImageTable = () => {
   const { images, removeImage, clearImages } = useImageStore();
 
   return (
-    <Card className="flex-1 flex flex-col min-h-0 gap-2 py-0 pt-3 pb-0" >
+    <>
+ <Card className="flex-1 flex flex-col min-h-0 gap-2 py-0 pt-3 pb-0" >
       <CardHeader className="pb-0 gap-0">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base">
@@ -66,5 +68,9 @@ export const ImageList = () => {
         </ScrollArea>
       </CardContent>
     </Card>
+
+    <ImagePreview />
+    </>
+   
   );
 };

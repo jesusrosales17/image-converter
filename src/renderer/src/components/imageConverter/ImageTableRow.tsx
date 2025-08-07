@@ -1,10 +1,10 @@
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { Progress } from "../ui/progress";
-import { X } from "lucide-react";
-import { ImagePreview } from "./ImagePreview";
+import { EyeIcon, X } from "lucide-react";
 import type { ImageFile } from "@/interfaces/images";
 import { formatFileSize } from "@/utils/image";
+import { useImageStore } from "@/store/useImageStore";
 
 interface ImageTableRowProps {
   file: ImageFile;
@@ -12,7 +12,7 @@ interface ImageTableRowProps {
 }
 
 export const ImageTableRow = ({ file, onRemove }: ImageTableRowProps) => {
-  
+  const  setImageToShow  = useImageStore((state) => state.setImageToShow);
 
   const getStatusBadge = (status: ImageFile['status']) => {
     const statusConfig = {
@@ -42,14 +42,7 @@ export const ImageTableRow = ({ file, onRemove }: ImageTableRowProps) => {
     <tr className="border-b hover:bg-gray-50">
       <td className="px-4 py-3 font-medium">
         <div className="flex items-center gap-2">
-          <img
-            src={file.preview || "/placeholder.svg"}
-            alt={file.name}
-            className="w-8 h-8 object-cover rounded border"
-            onError={(e) => {
-              e.currentTarget.src = "/placeholder.svg";
-            }}
-          />
+         
           <span className="truncate max-w-[200px]">{file.name}</span>
         </div>
       </td>
@@ -57,7 +50,14 @@ export const ImageTableRow = ({ file, onRemove }: ImageTableRowProps) => {
       <td className="px-4 py-3">{getStatusBadge(file.status)}</td>
       <td className="px-4 py-3 text-right">
         <div className="flex items-center gap-1 justify-end">
-          <ImagePreview file={file} />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setImageToShow(file.path)}
+            className="h-8 w-8 p-0"
+          >
+            <EyeIcon className="h-4 w-4" />
+          </Button>
           <Button
             variant="ghost"
             size="sm"

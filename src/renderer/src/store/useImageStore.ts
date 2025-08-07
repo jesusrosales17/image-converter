@@ -1,3 +1,4 @@
+import type { ImagePreviewResult } from '@/interfaces/fileDialog';
 import type { ImageFile, ImageStore, OutputFormal } from '@/interfaces/images';
 import { create } from 'zustand';
 
@@ -8,7 +9,8 @@ export const useImageStore = create<ImageStore>((set) => ({
     isConverting: false,
     quality: 80,
     outputFolder: '',
-
+    imageToShow: '',
+    setImageToShow: (image) => set({ imageToShow: image }),
     setImages: (images: ImageFile[]) => set({ images }),
     setIsConverting: (isConverting: boolean) => set({ isConverting }),
     setQuality: (quality: number) => set({ quality }),
@@ -22,4 +24,14 @@ export const useImageStore = create<ImageStore>((set) => ({
     })),
     removeImage: (path) => set((state) => ({ images: state.images.filter((img) => img.path !== path) })),
     clearImages: () => set({ images: [] }),
+
+    imagePreview: async (filePath: string) => {
+        try {
+            const response = await window.electron.ipcRenderer.invoke('imagePreview:get', filePath);
+            return { preview: response.preview, name: response.name };
+        } catch (error) {
+            console.error('Error al obtener la vista previa de la imagen:', error);
+            return { preview: '', error: 'No se pudo obtener la vista previa', name: '' };
+        }
+    },
 }));

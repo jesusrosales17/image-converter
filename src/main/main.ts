@@ -1,6 +1,6 @@
-import { BrowserWindow, app, ipcMain, dialog } from "electron";
+import { BrowserWindow, app, ipcMain, dialog, nativeImage } from "electron";
 import * as path from "path";
-import { DialogResult } from '../renderer/src/interfaces/fileDialog';
+import { DialogResult, ImagePreviewResult } from '../renderer/src/interfaces/fileDialog';
 import fs from 'fs';
 import { getImageExtension } from '../renderer/src/utils/image';
 import { StatusImage } from '../../dist/renderer/src/interfaces/images';
@@ -27,17 +27,15 @@ function createWindow(): void {
 
 ipcMain.handle('dialog:open', async (_, options): Promise<DialogResult> => {
     const result = await dialog.showOpenDialog(options);
-
+ 
     const files = await Promise.all(result.filePaths.map(async filePath => {
         const stat = fs.statSync(filePath); // para obtener el tamaño
         const type = getImageExtension(filePath);
-        const preview = `data:image/${type};base64,${fs.readFileSync(filePath, { encoding: 'base64' })}`;
         return {
             path: filePath,
             name: path.basename(filePath),
             size: stat.size,
             type: type,
-            preview: preview, 
             status:  StatusImage.pending,
             progress: 0
         };
@@ -45,6 +43,29 @@ ipcMain.handle('dialog:open', async (_, options): Promise<DialogResult> => {
 
     return {canceled: result.canceled,  files};
 });
+
+
+// generar una vista previa de la imagen en base 64
+ipcMain.handle('imagePreview:get', async (_, filePath: string): Promise<ImagePreviewResult> => {
+    try {
+        if (fs.existsSync(filePath)) {
+            const image = nativeImage.createFromPath(filePath);
+            return {
+                preview: image.toDataURL(),
+                name: path.basename(filePath)
+            };
+        } else {
+            throw new Error('File does not exist');
+        }
+    } catch (error) {
+        console.error('Error loading image preview:', error);
+        return {
+            preview: '',
+            error: "Error al obtener la vista previa de la imagen",
+            name: path.basename(filePath)
+        };
+    }
+})
 
 
 app.whenReady().then( () => {
