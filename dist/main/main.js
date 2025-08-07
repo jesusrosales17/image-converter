@@ -49,6 +49,11 @@ function createWindow() {
     });
     windows.loadURL('http://localhost:5173/');
 }
+// ipcMain es el proceso principal de Electron que maneja la comunicación entre el proceso principal y los procesos de renderizado
+electron_1.ipcMain.handle('dialog:open', async (_, options) => {
+    const result = await electron_1.dialog.showOpenDialog(options);
+    return result.filePaths;
+});
 electron_1.app.whenReady().then(() => {
     // crear la ventana principal
     createWindow();

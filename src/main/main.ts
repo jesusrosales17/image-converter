@@ -1,4 +1,4 @@
-import { BrowserWindow, app } from "electron";
+import { BrowserWindow, app, ipcMain, dialog } from "electron";
 import * as path from "path";
 
 function createWindow(): void {
@@ -16,6 +16,14 @@ function createWindow(): void {
 
     windows.loadURL('http://localhost:5173/');  
 }
+
+// ipcMain es el proceso principal de Electron que maneja la comunicación entre el proceso principal y los procesos de renderizado
+ipcMain.handle('dialog:open', async (_, options) => {
+    const result = await dialog.showOpenDialog(options);
+
+    return result.filePaths;
+    
+});
 
 
 app.whenReady().then( () => {
