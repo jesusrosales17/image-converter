@@ -10,6 +10,7 @@ import { ImageTable } from "./components/imageConverter/ImageTable"
 import { ImageSettings } from "./components/imageConverter/ImageSettings"
 import { InputImageUpload } from "./components/imageConverter/InputImageUpload"
 import { useImageStore } from "./store/useImageStore"
+import { Toaster } from "sonner"
 
 interface ImageFile {
   id: string
@@ -59,6 +60,7 @@ export default function App() {
 
 
         <ImageSettings />
+        <Toaster  />
       </div>
     </div>
   )

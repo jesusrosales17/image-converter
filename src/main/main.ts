@@ -68,6 +68,21 @@ ipcMain.handle('imagePreview:get', async (_, filePath: string): Promise<ImagePre
 })
 
 
+// optener ruta de la carpeta del destino
+ipcMain.handle('dialog:openFolderForOutput', async (_, options): Promise<string> => {
+    const result = await dialog.showOpenDialog({
+        properties: ['openDirectory']
+    });
+
+    if(result) {
+        return result.filePaths[0]
+    }
+
+    
+
+    return '';
+});
+
 app.whenReady().then( () => {
     // crear la ventana principal
     createWindow();

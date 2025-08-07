@@ -1,4 +1,3 @@
-import type { ImagePreviewResult } from '@/interfaces/fileDialog';
 import type { ImageFile, ImageStore, OutputFormal } from '@/interfaces/images';
 import { create } from 'zustand';
 

@@ -6,7 +6,7 @@ import { useCallback } from 'react';
 
 
 export const useFileDialog = () => {
-    const {addImage} = useImageStore();
+    const {addImage, setOutputFolder} = useImageStore();
   const openSingleFileDialog = useCallback(async () => {
     try {
       const result: DialogResult = await window.electron.ipcRenderer.invoke('dialog:open', {
@@ -68,9 +68,30 @@ export const useFileDialog = () => {
     }
   }, []);
 
+  // abrir dialogo de folder pero para optener ruta de salida
+  const openFolderDialogForOutput = useCallback(async () => {
+    try {
+      const result: string = await window.electron.ipcRenderer.invoke('dialog:openFolderForOutput', {
+        properties: ['openDirectory']
+      });
+
+    if (result) {
+        // Aquí puedes manejar la carpeta seleccionada para la salida
+        setOutputFolder(result);
+        return result;
+      }
+
+      return [];
+    } catch (error) {
+      console.error('Error opening folder dialog for output:', error);
+      return [];
+    }
+  }, []);
+
   return {
     openSingleFileDialog,
     openMultipleFilesDialog,
-    openFolderDialog
+    openFolderDialog,
+    openFolderDialogForOutput
   };
 };

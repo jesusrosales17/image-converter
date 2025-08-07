@@ -1,16 +1,19 @@
-import { Slider } from "@radix-ui/react-slider";
+import { Slider } from "../ui/slider";
 import { Label } from "../ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Separator } from "../ui/separator";
 import { AlertCircle, FolderOpen, Play } from "lucide-react";
 import { Button } from "../ui/button";
 import { Alert, AlertDescription } from "../ui/alert";
-import { useState } from "react";
+import { useImageStore } from "@/store/useImageStore";
+import { useFileDialog } from "@/hooks/useFileDialog";
+import { useConverter } from "@/hooks/useConverter";
+import { ButtonStartConversion } from "./ButtonStartConversion";
 
 export const ImageSettings = () => {
- const [outputFormat, setOutputFormat] = useState("webp")
-  const [quality, setQuality] = useState([80])
-  const [outputFolder, setOutputFolder] = useState("")
+  const {outputFormat, setOutputFormat, quality, setQuality, outputFolder} = useImageStore();
+  const {openFolderDialogForOutput} = useFileDialog();
+  
   return (
 
     <div className="w-80 bg-white border-l p-4 space-y-4">
@@ -20,7 +23,7 @@ export const ImageSettings = () => {
         {/* Formato de Salida */}
         <div className="space-y-2 mb-4">
           <Label className="text-sm">Formato de salida</Label>
-          <Select value={outputFormat} onValueChange={setOutputFormat}>
+          <Select value={outputFormat} onValueChange={() => setOutputFormat}>
             <SelectTrigger className="h-9">
               <SelectValue />
             </SelectTrigger>
@@ -39,11 +42,11 @@ export const ImageSettings = () => {
         <div className="space-y-3 mb-4">
           <div className="flex justify-between">
             <Label className="text-sm">Calidad</Label>
-            <span className="text-sm text-gray-500">{quality[0]}%</span>
+            <span className="text-sm text-gray-500">{quality}%</span>
           </div>
           <Slider
-            value={quality}
-            onValueChange={setQuality}
+          value={[quality]}
+            onValueChange={(value) => setQuality(value[0])}
             max={100}
             min={1}
             step={1}
@@ -64,26 +67,25 @@ export const ImageSettings = () => {
             <div className="flex-1 px-3 py-2 bg-gray-50 border rounded text-sm text-gray-600 truncate min-w-0">
               {outputFolder || "Seleccionar..."}
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex-shrink-0 bg-transparent"
-            >
-              <FolderOpen className="h-4 w-4" />
-            </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="text-xs bg-transparent"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  openFolderDialogForOutput();
+                }}
+              >
+                <FolderOpen className="h-3 w-3 mr-1" />
+                Carpeta
+              </Button>
           </div>
         </div>
 
         {/* Botón de Conversión */}
-        <Button
-          className="w-full"
-        //   onClick={startConversion}
-        //   disabled={selectedFiles.length === 0 || isProcessing}
-        >
-          <Play className="h-4 w-4 mr-2" />
-          {/* {isProcessing ? "Procesando..." : "Iniciar Conversión"} */}
-          Iniciar conversión
-        </Button>
+                <ButtonStartConversion />
 
         {/* Información */}
         <Alert className="mt-4">

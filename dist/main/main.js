@@ -95,6 +95,16 @@ electron_1.ipcMain.handle('imagePreview:get', async (_, filePath) => {
         };
     }
 });
+// optener ruta de la carpeta del destino
+electron_1.ipcMain.handle('dialog:openFolderForOutput', async (_, options) => {
+    const result = await electron_1.dialog.showOpenDialog({
+        properties: ['openDirectory']
+    });
+    if (result) {
+        return result.filePaths[0];
+    }
+    return '';
+});
 electron_1.app.whenReady().then(() => {
     // crear la ventana principal
     createWindow();
