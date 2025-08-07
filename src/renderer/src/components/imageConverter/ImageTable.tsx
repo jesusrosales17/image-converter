@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "../ui/card";
 import { ImageIcon } from "lucide-react";
 import { useImageStore } from "@/store/useImageStore";
 import { ImageTableRow } from "./ImageTableRow";
-import { ImagePreview } from "./ImagePreview";
+import { ImagePreviewModal} from "./ImagePreview";
 
 export const ImageTable = () => {
   const { images, removeImage, clearImages } = useImageStore();
@@ -69,7 +69,7 @@ export const ImageTable = () => {
       </CardContent>
     </Card>
 
-    <ImagePreview />
+    <ImagePreviewModal />
     </>
    
   );

@@ -1,65 +1,71 @@
 "use client";
 import {
   Dialog,
-  DialogTrigger,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "../ui/dialog";
-import { Eye, ImageIcon } from "lucide-react";
-import { Button } from "../ui/button";
-import { useImageStore } from "@/store/useImageStore";
-import { useEffect, useState } from "react";
-import type { ImagePreviewResult } from "@/interfaces/fileDialog";
+import { ImageIcon } from "lucide-react";
+import { useImagePreview } from "@/hooks/useImagePreview";
+import { ImageDisplay } from "../ui/ImageDisplay";
+import { LoadingSpinner } from "../ui/LoadingSpinner";
+import { ErrorDisplay } from "../ui/ErrorDisplay";
 
-export const ImagePreview = () => {
-  const [loading, setLoading] = useState(false);
-  const [preview, setPreview] = useState<ImagePreviewResult | null>(null);
-  // obtener el path de la imagen y solicitarla a electron para obtener la vista previa
-  const {imagePreview, imageToShow, setImageToShow } = useImageStore();
-  // Si no hay imagen seleccionada, no mostrar el preview
+/**
+ * Modal component for displaying image previews
+ * Handles loading states, errors, and displays image metadata
+ */
+export const ImagePreviewModal = () => {
+  const { 
+    isLoading, 
+    previewData, 
+    error, 
+    closePreview, 
+    hasSelectedImage 
+  } = useImagePreview();
 
+  // Don't render if no image is selected
+  if (!hasSelectedImage) {
+    return null;
+  }
 
-  // Solicitar la vista previa de la imagen a Electron
-  useEffect(() => {
-    const getImagePreview = async () => {
-      setLoading(true);
+  const renderImageContent = () => {
+    if (isLoading) {
+      return <LoadingSpinner message="Cargando vista previa..." className="h-64" />;
+    }
 
-      const preview = await imagePreview(imageToShow!);
-      setPreview(preview);
-      setLoading(false);
-    };
-    getImagePreview();
-  }, [imagePreview, imageToShow]);
+    if (error) {
+      return <ErrorDisplay message={error} className="h-64" />;
+    }
+
+    if (!previewData) {
+      return <ErrorDisplay message="No se pudo cargar la imagen" className="h-64" />;
+    }
+
+    return (
+      <ImageDisplay 
+        src={previewData.preview} 
+        alt={previewData.name || 'Vista previa'} 
+      />
+    );
+  };
 
   return (
-    <Dialog open={!!imageToShow} onOpenChange={() => setImageToShow("")}>
-      <DialogTrigger asChild>
-        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-          <Eye className="h-4 w-4" />
-        </Button>
-      </DialogTrigger>
+    <Dialog open={hasSelectedImage} onOpenChange={closePreview}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ImageIcon className="h-5 w-5" />
-            {preview?.name}
+            {previewData?.name || 'Vista previa de imagen'}
           </DialogTitle>
         </DialogHeader>
-        <div className="space-y-1">
+        
+        <div className="space-y-4">
+          {/* Image container */}
           <div className="aspect-square bg-gray-100 rounded-lg flex items-center justify-center border">
-            {loading ? (
-              <p>Cargando...</p>
-            ) : (
-              <img
-                src={preview?.preview || "/placeholder.svg"}
-                className="max-w-full max-h-full object-contain rounded"
-                onError={(e) => {
-                  e.currentTarget.src = "/placeholder.svg";
-                }}
-              />
-            )}
+            {renderImageContent()}
           </div>
+
         </div>
       </DialogContent>
     </Dialog>
