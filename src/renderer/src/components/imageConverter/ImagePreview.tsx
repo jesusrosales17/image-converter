@@ -7,7 +7,6 @@ import {
 } from "../ui/dialog";
 import { Eye, ImageIcon } from "lucide-react";
 import { Button } from "../ui/button";
-import { formatFileSize } from "@/utils/image";
 import type { ImageFile } from "@/interfaces/images";
 
 
