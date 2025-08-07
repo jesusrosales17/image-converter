@@ -1,6 +1,11 @@
 import { BrowserWindow, app, ipcMain, dialog } from "electron";
 import * as path from "path";
 import { DialogResult } from '../renderer/src/interfaces/fileDialog';
+import fs from 'fs';
+import { getImageExtension } from '../renderer/src/utils/image';
+import { StatusImage } from '../../dist/renderer/src/interfaces/images';
+
+
 
 function createWindow(): void {
     const windows = new BrowserWindow({
@@ -19,13 +24,26 @@ function createWindow(): void {
 }
 
 // ipcMain es el proceso principal de Electron que maneja la comunicación entre el proceso principal y los procesos de renderizado
+
 ipcMain.handle('dialog:open', async (_, options): Promise<DialogResult> => {
     const result = await dialog.showOpenDialog(options);
 
-    return {
-        canceled: result.canceled,
-        filePaths: result.filePaths
-    }; 
+    const files = await Promise.all(result.filePaths.map(async filePath => {
+        const stat = fs.statSync(filePath); // para obtener el tamaño
+        const type = getImageExtension(filePath);
+        const preview = `data:image/${type};base64,${fs.readFileSync(filePath, { encoding: 'base64' })}`;
+        return {
+            path: filePath,
+            name: path.basename(filePath),
+            size: stat.size,
+            type: type,
+            preview: preview, 
+            status:  StatusImage.pending,
+            progress: 0
+        };
+    }));
+
+    return {canceled: result.canceled,  files};
 });
 
 

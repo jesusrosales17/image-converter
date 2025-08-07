@@ -9,3 +9,10 @@ export const formatImageInfo = (path: string): ImageFile => {
         name: fileName
     };
 }
+export const getImageExtension = (fileName: string): string => {
+    return fileName.split('.').pop() || '';
+}
+
+export const isValidImageExtension = (extension: string): boolean => {
+    return ['jpg', 'jpeg', 'png', 'webp', 'avif', 'bmp', 'tiff'].includes(extension.toLowerCase());
+}

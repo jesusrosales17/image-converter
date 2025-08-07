@@ -1,6 +1,8 @@
+import type { ImageFile } from "./images";
+
 export interface DialogResult {
   canceled: boolean;
-  filePaths: string[];
+  files: ImageFile[];
 }
 
 export interface UseFileDialogOptions {

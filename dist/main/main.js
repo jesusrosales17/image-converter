@@ -32,9 +32,15 @@ var __importStar = (this && this.__importStar) || (function () {
         return result;
     };
 })();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const electron_1 = require("electron");
 const path = __importStar(require("path"));
+const fs_1 = __importDefault(require("fs"));
+const image_1 = require("../renderer/src/utils/image");
+const images_1 = require("../../dist/renderer/src/interfaces/images");
 function createWindow() {
     const windows = new electron_1.BrowserWindow({
         width: 1000,
@@ -52,10 +58,21 @@ function createWindow() {
 // ipcMain es el proceso principal de Electron que maneja la comunicación entre el proceso principal y los procesos de renderizado
 electron_1.ipcMain.handle('dialog:open', async (_, options) => {
     const result = await electron_1.dialog.showOpenDialog(options);
-    return {
-        canceled: result.canceled,
-        filePaths: result.filePaths
-    };
+    const files = await Promise.all(result.filePaths.map(async (filePath) => {
+        const stat = fs_1.default.statSync(filePath); // para obtener el tamaño
+        const type = (0, image_1.getImageExtension)(filePath);
+        const preview = `data:image/${type};base64,${fs_1.default.readFileSync(filePath, { encoding: 'base64' })}`;
+        return {
+            path: filePath,
+            name: path.basename(filePath),
+            size: stat.size,
+            type: type,
+            preview: preview,
+            status: images_1.StatusImage.pending,
+            progress: 0
+        };
+    }));
+    return { canceled: result.canceled, files };
 });
 electron_1.app.whenReady().then(() => {
     // crear la ventana principal

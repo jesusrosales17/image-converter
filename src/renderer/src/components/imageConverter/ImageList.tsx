@@ -8,10 +8,12 @@ import  {
 import { Progress } from "../ui/progress";
 import  { ScrollArea } from "../ui/scroll-area";
 import  { Label } from "../ui/label";
-import { Badge, Eye, ImageIcon, X } from "lucide-react";
+import { Badge } from "../ui/badge";
+import {  Eye, ImageIcon, X } from "lucide-react";
 import  { Button } from "../ui/button";
 import  { Card, CardHeader, CardTitle, CardContent } from "../ui/card";
 import { useState } from "react";
+import { useImageStore } from "@/store/useImageStore";
 
 interface ImageFile {
   id: string
@@ -25,7 +27,7 @@ interface ImageFile {
 }
 
 export const ImageList = () => {
-
+  const {images } = useImageStore();
   const [previewImage, setPreviewImage] = useState<ImageFile | null>(null)
   
 
@@ -62,20 +64,23 @@ export const ImageList = () => {
       <CardContent className="flex-1 p-0 min-h-0">
         <ScrollArea className="h-full px-4 pb-4">
           <div className="space-y-2">
-            {/* {selectedFiles.map((file) => (
+            {images.map((file) => (
               <div
-                key={file.id}
+                key={file.path}
                 className="flex items-center gap-3 p-2 bg-white rounded border hover:bg-gray-50"
               >
-                {getStatusIcon(file.status)}
+                {/* {getStatusIcon(file.status)} */}
                 <div className="flex-1 min-w-0">
+                  <img
+                    src={file.preview || "/placeholder.svg"}
+                    alt={file.name}
+                    className="w-4 h-4 object-contain rounded"
+                  />
                   <p className="font-medium text-sm text-gray-900 truncate">
                     {file.name}
                   </p>
                   <div className="flex items-center gap-2">
-                    <p className="text-xs text-gray-500">
-                      {formatFileSize(file.size)}
-                    </p>
+                   
                     <Badge
                       variant={
                         file.status === "completed"
@@ -108,7 +113,7 @@ export const ImageList = () => {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => setPreviewImage(file)}
+                        // onClick={() => setPreviewImage(file.preview || )}
                         className="h-8 w-8 p-0"
                       >
                         <Eye className="h-3 w-3" />
@@ -135,26 +140,27 @@ export const ImageList = () => {
                           </div>
                           <div className="text-xs text-gray-500 space-y-1">
                             <p>Formato: {file.type}</p>
-                            <p>Tamaño: {formatFileSize(file.size)}</p>
+                            <p>Tamaño: {formatFileSize(file.size || 0)}</p>
                           </div>
                         </div>
                         <div className="space-y-2">
                           <Label className="text-sm font-medium">
-                            Vista previa ({outputFormat.toUpperCase()})
+                            Vista previa png
+                            {/* Vista previa ({outputFormat.toUpperCase()}) */}
                           </Label>
                           <div className="aspect-square bg-gray-100 rounded-lg flex items-center justify-center border">
                             <img
-                              src={`/vista-previa-text.png?height=300&width=300&text=Vista previa ${outputFormat.toUpperCase()}`}
+                              src={file.preview || "/placeholder.svg"}
                               alt="Preview"
                               className="max-w-full max-h-full object-contain rounded"
                             />
                           </div>
                           <div className="text-xs text-gray-500 space-y-1">
-                            <p>Formato: {outputFormat.toUpperCase()}</p>
-                            <p>Calidad: {quality[0]}%</p>
+                            <p>Formato: png</p>
+                            <p>Calidad: 80%</p>
                             <p>
                               Tamaño estimado:{" "}
-                              {formatFileSize(file.size * (quality[0] / 100))}
+                              {formatFileSize(file.size || 0 * (80 / 100))}
                             </p>
                           </div>
                         </div>
@@ -165,15 +171,15 @@ export const ImageList = () => {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => removeFile(file.id)}
-                    disabled={isProcessing}
+                    // onClick={() => removeFile(file.id)}
+                    // disabled={isProcessing}
                     className="h-8 w-8 p-0"
                   >
                     <X className="h-3 w-3" />
                   </Button>
                 </div>
               </div>
-            ))} */}
+            ))}
           </div>
         </ScrollArea>
       </CardContent>

@@ -1,7 +1,6 @@
 import { EXTENSIONS } from '@/consts/images';
 import type { DialogResult } from '@/interfaces/fileDialog';
 import { useImageStore } from '@/store/useImageStore';
-import { formatImageInfo } from '@/utils/image';
 import { useCallback } from 'react';
 
 
@@ -16,11 +15,9 @@ export const useFileDialog = () => {
           { name: 'Images', extensions: EXTENSIONS }
         ]
       });
-      
-      if (result && !result.canceled && result.filePaths.length > 0) {
-        result.filePaths.map(file => {
-            const image = formatImageInfo(file);
-            addImage(image);
+      if (result && !result.canceled && result.files.length > 0) {
+        result.files.map(file => {
+            addImage(file);
         })
       }
       return [];
@@ -39,10 +36,9 @@ export const useFileDialog = () => {
         ]
       });
       
-      if (result && !result.canceled && result.filePaths.length > 0) {
-        return result.filePaths.map(file => {
-            const image = formatImageInfo(file);
-            addImage(image);
+      if (result && !result.canceled && result.files.length > 0) {
+        return result.files.map(file => {
+            addImage(file);
         });
       }
       
@@ -59,10 +55,10 @@ export const useFileDialog = () => {
         properties: ['openDirectory']
       });
       
-      if (result && !result.canceled && result.filePaths.length > 0) {
+      if (result && !result.canceled && result.files.length > 0) {
         // Para carpetas, necesitarías implementar lógica adicional
         // para escanear los archivos de imagen dentro de la carpeta
-        return result.filePaths;
+        return result.files;
       }
       
       return [];
