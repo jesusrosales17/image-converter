@@ -31,7 +31,6 @@ export const ImageSettings = () => {
               <SelectItem value="jpg">JPEG</SelectItem>
               <SelectItem value="png">PNG</SelectItem>
               <SelectItem value="avif">AVIF</SelectItem>
-              <SelectItem value="bmp">BMP</SelectItem>
               <SelectItem value="tiff">TIFF</SelectItem>
             </SelectContent>
           </Select>

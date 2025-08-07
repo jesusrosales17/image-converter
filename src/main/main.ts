@@ -4,6 +4,8 @@ import { DialogResult, ImagePreviewResult } from '../renderer/src/interfaces/fil
 import fs from 'fs';
 import { getImageExtension } from '../renderer/src/utils/image';
 import { StatusImage } from '../../dist/renderer/src/interfaces/images';
+import { ConversionOptions, ConversionResult } from '../types/conversion';
+import sharp from "sharp";
 
 
 
@@ -20,14 +22,14 @@ function createWindow(): void {
         },
     })
 
-    windows.loadURL('http://localhost:5173/');  
+    windows.loadURL('http://localhost:5173/');
 }
 
 // ipcMain es el proceso principal de Electron que maneja la comunicación entre el proceso principal y los procesos de renderizado
 
 ipcMain.handle('dialog:open', async (_, options): Promise<DialogResult> => {
     const result = await dialog.showOpenDialog(options);
- 
+
     const files = await Promise.all(result.filePaths.map(async filePath => {
         const stat = fs.statSync(filePath); // para obtener el tamaño
         const type = getImageExtension(filePath);
@@ -36,12 +38,12 @@ ipcMain.handle('dialog:open', async (_, options): Promise<DialogResult> => {
             name: path.basename(filePath),
             size: stat.size,
             type: type,
-            status:  StatusImage.pending,
+            status: StatusImage.pending,
             progress: 0
         };
     }));
 
-    return {canceled: result.canceled,  files};
+    return { canceled: result.canceled, files };
 });
 
 
@@ -74,16 +76,121 @@ ipcMain.handle('dialog:openFolderForOutput', async (_, options): Promise<string>
         properties: ['openDirectory']
     });
 
-    if(result) {
+    if (result) {
         return result.filePaths[0]
     }
 
-    
+
 
     return '';
 });
 
-app.whenReady().then( () => {
+ipcMain.handle('convert:images', async (_, { images, outputFormat, quality, outputFolder }: ConversionOptions): Promise<ConversionResult> => {
+    let convertedCount = 0;
+    let failedCount = 0;
+    let results: ConversionResult['details'] = [];
+    if (!images || images.length === 0) {
+        throw new Error("No hay imágenes seleccionadas");
+    }
+
+    if (!outputFormat || !outputFolder) {
+        throw new Error("Formato de salida o carpeta de salida no especificados");
+    }
+
+    // Verificar que la carpeta de salida existe
+    if (!fs.existsSync(outputFolder)) {
+        throw new Error("La carpeta de salida no existe");
+    }
+
+
+    // procesar las imagenes una por una
+    for (const image of images) {
+        try {
+            // simular error con la primera imagen
+        
+            const inputPath = image.path;
+            const baseName = path.basename(inputPath, path.extname(inputPath));
+            const outputPath = path.join(outputFolder, `${baseName}.${outputFormat}`);
+
+
+            let sharpInstance = sharp(inputPath);
+
+            switch (outputFormat) {
+                case 'jpeg':
+                    sharpInstance = sharpInstance.jpeg({
+                        quality,
+                        progressive: true,
+                        mozjpeg: true
+                    });
+                    break;
+
+                case 'webp':
+                    sharpInstance = sharpInstance.webp({
+                        quality,
+                        effort: 6 // Mejor compresión
+                    });
+                    break;
+
+                case 'png':
+                    sharpInstance = sharpInstance.png({
+                        quality,
+                        compressionLevel: 9,
+                        progressive: true
+                    });
+                    break;
+
+                case 'avif':
+                    sharpInstance = sharpInstance.avif({
+                        quality,
+                        effort: 6
+                    });
+                    break;
+
+                case 'tiff':
+                    sharpInstance = sharpInstance.tiff({
+                        quality,
+                        compression: 'jpeg'
+                    });
+                    break;
+                default:
+                    throw new Error(`Formato de salida no soportado: ${outputFormat}`);
+
+            }
+
+
+            await sharpInstance.toFile(outputPath);
+
+            results.push({
+                originalPath: inputPath,
+                outputPath,
+                success: true
+            })
+            convertedCount++;
+
+            console.log(`✅ Converted: ${inputPath} → ${outputPath}`);
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+
+            results.push({
+                originalPath: image.path,
+                success: false,
+                error: errorMessage
+            });
+
+            failedCount++;
+            console.error(`❌ Failed to convert ${image.path}:`, error);
+        }
+    }
+
+    return {
+        success: failedCount === 0,
+        convertedCount,
+        failedCount,
+        details: results
+    };
+});
+
+app.whenReady().then(() => {
     // crear la ventana principal
     createWindow();
 
@@ -95,10 +202,9 @@ app.whenReady().then( () => {
     })
 })
 
-
 // cerrar la aplicacion cuando todas las ventanas esten cerradas en sistemas que no sean macOS
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit()
-  }
+    if (process.platform !== 'darwin') {
+        app.quit()
+    }
 })

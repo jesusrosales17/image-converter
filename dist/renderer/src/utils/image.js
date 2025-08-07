@@ -16,7 +16,7 @@ const getImageExtension = (fileName) => {
 };
 exports.getImageExtension = getImageExtension;
 const isValidImageExtension = (extension) => {
-    return ['jpg', 'jpeg', 'png', 'webp', 'avif', 'bmp', 'tiff'].includes(extension.toLowerCase());
+    return ['jpg', 'jpeg', 'png', 'webp', 'avif', 'tiff'].includes(extension.toLowerCase());
 };
 exports.isValidImageExtension = isValidImageExtension;
 const formatFileSize = (bytes) => {

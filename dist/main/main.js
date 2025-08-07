@@ -41,6 +41,7 @@ const path = __importStar(require("path"));
 const fs_1 = __importDefault(require("fs"));
 const image_1 = require("../renderer/src/utils/image");
 const images_1 = require("../../dist/renderer/src/interfaces/images");
+const sharp_1 = __importDefault(require("sharp"));
 function createWindow() {
     const windows = new electron_1.BrowserWindow({
         width: 1000,
@@ -104,6 +105,91 @@ electron_1.ipcMain.handle('dialog:openFolderForOutput', async (_, options) => {
         return result.filePaths[0];
     }
     return '';
+});
+electron_1.ipcMain.handle('convert:images', async (_, { images, outputFormat, quality, outputFolder }) => {
+    let convertedCount = 0;
+    let failedCount = 0;
+    let results = [];
+    if (!images || images.length === 0) {
+        throw new Error("No hay imágenes seleccionadas");
+    }
+    if (!outputFormat || !outputFolder) {
+        throw new Error("Formato de salida o carpeta de salida no especificados");
+    }
+    // Verificar que la carpeta de salida existe
+    if (!fs_1.default.existsSync(outputFolder)) {
+        throw new Error("La carpeta de salida no existe");
+    }
+    // procesar las imagenes una por una
+    for (const image of images) {
+        try {
+            // simular error con la primera imagen
+            const inputPath = image.path;
+            const baseName = path.basename(inputPath, path.extname(inputPath));
+            const outputPath = path.join(outputFolder, `${baseName}.${outputFormat}`);
+            let sharpInstance = (0, sharp_1.default)(inputPath);
+            switch (outputFormat) {
+                case 'jpeg':
+                    sharpInstance = sharpInstance.jpeg({
+                        quality,
+                        progressive: true,
+                        mozjpeg: true
+                    });
+                    break;
+                case 'webp':
+                    sharpInstance = sharpInstance.webp({
+                        quality,
+                        effort: 6 // Mejor compresión
+                    });
+                    break;
+                case 'png':
+                    sharpInstance = sharpInstance.png({
+                        quality,
+                        compressionLevel: 9,
+                        progressive: true
+                    });
+                    break;
+                case 'avif':
+                    sharpInstance = sharpInstance.avif({
+                        quality,
+                        effort: 6
+                    });
+                    break;
+                case 'tiff':
+                    sharpInstance = sharpInstance.tiff({
+                        quality,
+                        compression: 'jpeg'
+                    });
+                    break;
+                default:
+                    throw new Error(`Formato de salida no soportado: ${outputFormat}`);
+            }
+            await sharpInstance.toFile(outputPath);
+            results.push({
+                originalPath: inputPath,
+                outputPath,
+                success: true
+            });
+            convertedCount++;
+            console.log(`✅ Converted: ${inputPath} → ${outputPath}`);
+        }
+        catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+            results.push({
+                originalPath: image.path,
+                success: false,
+                error: errorMessage
+            });
+            failedCount++;
+            console.error(`❌ Failed to convert ${image.path}:`, error);
+        }
+    }
+    return {
+        success: failedCount === 0,
+        convertedCount,
+        failedCount,
+        details: results
+    };
 });
 electron_1.app.whenReady().then(() => {
     // crear la ventana principal

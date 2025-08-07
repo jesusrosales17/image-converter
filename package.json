@@ -20,6 +20,7 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
+    "sharp": "^0.34.3",
     "ts-node": "^10.9.2"
   }
 }

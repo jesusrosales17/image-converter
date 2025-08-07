@@ -19,7 +19,7 @@ export type ImageFile = {
     progress?: number; // porcentaje de progreso
 }
 
-export type OutputFormal = "webp" | "avif" | "jpeg" | "png" | "bmp" | "tiff";
+export type OutputFormal = "webp" | "avif" | "jpeg" | "png"  | "tiff";
 
 export interface ImageStore {
     images: ImageFile[];

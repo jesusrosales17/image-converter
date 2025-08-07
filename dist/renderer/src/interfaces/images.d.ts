@@ -1,3 +1,4 @@
+import type { ImagePreviewResult } from "./fileDialog";
 export declare const StatusImage: {
     pending: string;
     processing: string;
@@ -14,7 +15,7 @@ export type ImageFile = {
     status?: StatusImage;
     progress?: number;
 };
-export type OutputFormal = "webp" | "avif" | "jpeg" | "png" | "bmp" | "tiff";
+export type OutputFormal = "webp" | "avif" | "jpeg" | "png" | "tiff";
 export interface ImageStore {
     images: ImageFile[];
     outputFormat: OutputFormal;
@@ -31,5 +32,6 @@ export interface ImageStore {
     addImage: (image: ImageFile) => void;
     removeImage: (path: string) => void;
     clearImages: () => void;
+    imagePreview: (filePath: string) => Promise<ImagePreviewResult>;
 }
 //# sourceMappingURL=images.d.ts.map

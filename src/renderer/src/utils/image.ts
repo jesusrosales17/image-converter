@@ -14,7 +14,7 @@ export const getImageExtension = (fileName: string): string => {
 }
 
 export const isValidImageExtension = (extension: string): boolean => {
-    return ['jpg', 'jpeg', 'png', 'webp', 'avif', 'bmp', 'tiff'].includes(extension.toLowerCase());
+    return ['jpg', 'jpeg', 'png', 'webp', 'avif', 'tiff'].includes(extension.toLowerCase());
 }
 
 export  const formatFileSize = (bytes: number) => {
