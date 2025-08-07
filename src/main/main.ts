@@ -1,5 +1,6 @@
 import { BrowserWindow, app, ipcMain, dialog } from "electron";
 import * as path from "path";
+import { DialogResult } from '../renderer/src/interfaces/fileDialog';
 
 function createWindow(): void {
     const windows = new BrowserWindow({
@@ -18,11 +19,13 @@ function createWindow(): void {
 }
 
 // ipcMain es el proceso principal de Electron que maneja la comunicación entre el proceso principal y los procesos de renderizado
-ipcMain.handle('dialog:open', async (_, options) => {
+ipcMain.handle('dialog:open', async (_, options): Promise<DialogResult> => {
     const result = await dialog.showOpenDialog(options);
 
-    return result.filePaths;
-    
+    return {
+        canceled: result.canceled,
+        filePaths: result.filePaths
+    }; 
 });
 
 

@@ -1,21 +1,27 @@
+import { EXTENSIONS } from '@/consts/images';
 import type { DialogResult } from '@/interfaces/fileDialog';
+import { useImageStore } from '@/store/useImageStore';
+import { formatImageInfo } from '@/utils/image';
 import { useCallback } from 'react';
 
-const extensions = ['jpg', 'jpeg', 'png', 'webp', 'avif', 'bmp', 'tiff'];
+
 
 export const useFileDialog = () => {
+    const {addImage} = useImageStore();
   const openSingleFileDialog = useCallback(async () => {
     try {
       const result: DialogResult = await window.electron.ipcRenderer.invoke('dialog:open', {
         properties: ['openFile'],
         filters: [
-          { name: 'Images', extensions }
+          { name: 'Images', extensions: EXTENSIONS }
         ]
       });
       
-        console.log('resultado', result) 
       if (result && !result.canceled && result.filePaths.length > 0) {
-        return result.filePaths;
+        result.filePaths.map(file => {
+            const image = formatImageInfo(file);
+            addImage(image);
+        })
       }
       return [];
     } catch (error) {
@@ -29,12 +35,15 @@ export const useFileDialog = () => {
       const result: DialogResult = await window.electron.ipcRenderer.invoke('dialog:open', {
         properties: ['openFile', 'multiSelections'],
         filters: [
-          { name: 'Images', extensions }
+          { name: 'Images', extensions: EXTENSIONS }
         ]
       });
       
       if (result && !result.canceled && result.filePaths.length > 0) {
-        return result.filePaths;
+        return result.filePaths.map(file => {
+            const image = formatImageInfo(file);
+            addImage(image);
+        });
       }
       
       return [];
