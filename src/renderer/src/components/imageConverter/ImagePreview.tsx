@@ -30,6 +30,7 @@ export const ImagePreviewModal = () => {
   }
 
   const renderImageContent = () => {
+    console.log(previewData)
     if (isLoading) {
       return <LoadingSpinner message="Cargando vista previa..." className="h-64" />;
     }

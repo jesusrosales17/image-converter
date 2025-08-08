@@ -103,7 +103,6 @@ ipcMain.handle('convert:images', async (event, { images, outputFormat, quality, 
     }
 
     // enviar el evento de inicio de la conversion
-    console.log('Iniciando conversión de imágenes...');
     event.sender.send('conversion:started', {
         total: images.length,
         outputFormat,
@@ -124,6 +123,26 @@ ipcMain.handle('convert:images', async (event, { images, outputFormat, quality, 
             const inputPath = image.path;
             const baseName = path.basename(inputPath, path.extname(inputPath));
             const outputPath = path.join(outputFolder, `${baseName}.${outputFormat}`);
+
+
+            // validar que la imagen del mismo tipo no este en la misma ruta de salida
+            if (fs.existsSync(outputPath)) {
+                // si la imagen es del mismo tipo a convertir marcar automaticamente en completada
+                results.push({
+                    originalPath: inputPath,
+                    outputPath,
+                    success: true
+                });
+                convertedCount++;
+                event.sender.send('conversion:imageCompleted', {
+                    imagePath: inputPath,
+                    outputPath,
+                    success: true,
+                    currentIndex: i + 1,
+                    total: images.length
+                });
+                continue;
+            }
 
             let sharpInstance = sharp(inputPath);
 

@@ -121,7 +121,6 @@ electron_1.ipcMain.handle('convert:images', async (event, { images, outputFormat
         throw new Error("La carpeta de salida no existe");
     }
     // enviar el evento de inicio de la conversion
-    console.log('Iniciando conversión de imágenes...');
     event.sender.send('conversion:started', {
         total: images.length,
         outputFormat,
@@ -140,6 +139,24 @@ electron_1.ipcMain.handle('convert:images', async (event, { images, outputFormat
             const inputPath = image.path;
             const baseName = path.basename(inputPath, path.extname(inputPath));
             const outputPath = path.join(outputFolder, `${baseName}.${outputFormat}`);
+            // validar que la imagen del mismo tipo no este en la misma ruta de salida
+            if (fs_1.default.existsSync(outputPath)) {
+                // si la imagen es del mismo tipo a convertir marcar automaticamente en completada
+                results.push({
+                    originalPath: inputPath,
+                    outputPath,
+                    success: true
+                });
+                convertedCount++;
+                event.sender.send('conversion:imageCompleted', {
+                    imagePath: inputPath,
+                    outputPath,
+                    success: true,
+                    currentIndex: i + 1,
+                    total: images.length
+                });
+                continue;
+            }
             let sharpInstance = (0, sharp_1.default)(inputPath);
             switch (outputFormat) {
                 case 'jpeg': // ✅ Agregar soporte para 'jpg'
