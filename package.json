@@ -15,6 +15,10 @@
     "dev": "concurrently \"tsc --watch\"  \"nodemon --watch dist --exec electron ./dist/main/main.js\"",
     "watch": "tsc --watch",
     "clean": "rm -rf dist && rm -rf release",
+    "prepare:sharp": "bash scripts/prepareSharp.sh",
+    "prepare:sharp:win": "bash scripts/prepareSharp.sh win32 x64",
+    "prepare:sharp:linux": "bash scripts/prepareSharp.sh linux x64",
+    "prepare:sharp:mac": "bash scripts/prepareSharp.sh darwin x64",
     "rebuild": "electron-builder install-app-deps",
     "build:renderer": "cd src/renderer && npm run build",
     "build:all": "npm run build && npm run build:renderer",
@@ -24,7 +28,9 @@
     "electron:build:mac": "npm run rebuild && npm run build:all && electron-builder --mac",
     "electron:pack": "npm run build:all && electron-builder --dir",
     "dist": "npm run build:all && electron-builder --publish=never",
-    "dist:linux": "npm run rebuild && npm run build:all && electron-builder --linux --publish=never",
+    "dist:win": "npm run prepare:sharp:win && npm run build:all && electron-builder --win --publish=never",
+    "dist:linux": "npm run prepare:sharp:linux && npm run build:all && electron-builder --linux --publish=never",
+    "dist:mac": "npm run prepare:sharp:mac && npm run build:all && electron-builder --mac --publish=never",
     "publish": "npm run rebuild && npm run build:all && electron-builder --publish=always",
     "postinstall": "electron-builder install-app-deps"
   },
@@ -37,7 +43,9 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
+    "@img/sharp-libvips-win32-x64": "^1.2.1",
     "@img/sharp-linux-x64": "^0.34.3",
+    "@img/sharp-win32-x64": "^0.34.3",
     "electron-updater": "^6.6.2",
     "sharp": "^0.34.3",
     "ts-node": "^10.9.2"
@@ -81,6 +89,13 @@
       {
         "from": "assets",
         "to": "assets",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "node_modules/sharp",
+        "to": "sharp",
         "filter": [
           "**/*"
         ]

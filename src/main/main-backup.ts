@@ -1,96 +1,107 @@
-import { BrowserWindow, app, ipcMain, dialog } from "electron";
+import { BrowserWindow, app, ipcMain, dialog, nativeImage, Menu } from "electron";
 import { autoUpdater } from "electron-updater";
 import * as path from "path";
+
+//   Configurar variables de entorno para Sharp ANTES de importarlo - MULTIPLATAFORMA
+const setupSharpEnvironment = () => {
+  if (app.isPackaged) {
+    const appPath = app.getAppPath();
+
+    switch (process.platform) {
+      case 'linux':
+        const sharpLibPath = path.join(appPath, 'node_modules', '@img', 'sharp-linux-x64', 'lib');
+        const currentLdPath = process.env.LD_LIBRARY_PATH || '';
+        process.env.LD_LIBRARY_PATH = `${sharpLibPath}:${currentLdPath}`;
+        console.log('🔧 Configurando LD_LIBRARY_PATH para Sharp (Linux):', process.env.LD_LIBRARY_PATH);
+        break;
+
+      case 'win32':
+        const sharpWinPath = path.join(appPath, 'node_modules', '@img', 'sharp-win32-x64');
+        const currentPath = process.env.PATH || '';
+        process.env.PATH = `${sharpWinPath};${currentPath}`;
+        console.log('🔧 Configurando PATH para Sharp (Windows):', sharpWinPath);
+        break;
+
+      case 'darwin':
+        const sharpMacPath = path.join(appPath, 'node_modules', '@img', 'sharp-darwin-x64', 'lib');
+        const currentDylibPath = process.env.DYLD_LIBRARY_PATH || '';
+        process.env.DYLD_LIBRARY_PATH = `${sharpMacPath}:${currentDylibPath}`;
+        console.log('🔧 Configurando DYLD_LIBRARY_PATH para Sharp (macOS):', process.env.DYLD_LIBRARY_PATH);
+        break;
+
+      default:
+        console.log('🔧 Plataforma no reconocida para configurar Sharp:', process.platform);
+    }
+  } else {
+    console.log('🔧 Modo desarrollo - usando Sharp del sistema');
+  }
+};
+
+// Configurar Sharp antes de importarlo
+setupSharpEnvironment();
+
+//   Importar Sharp de forma dinámica y con manejo de errores
+let sharp: any;
+try {
+  sharp = require('sharp');
+  console.log('  Sharp cargado correctamente');
+} catch (error) {
+  console.error('❌ Error cargando Sharp:', error);
+  // Fallback: intentar cargar Sharp específico por plataforma
+  try {
+    if (process.platform === 'win32') {
+      sharp = require('@img/sharp-win32-x64');
+    } else if (process.platform === 'darwin') {
+      sharp = require('@img/sharp-darwin-x64');
+    } else {
+      sharp = require('@img/sharp-linux-x64');
+    }
+    console.log('  Sharp específico de plataforma cargado como fallback');
+  } catch (fallbackError) {
+    console.error('❌ Error cargando Sharp específico de plataforma:', fallbackError);
+    throw new Error('No se pudo cargar Sharp en esta plataforma');
+  }
+}
 import { DialogResult, ImagePreviewResult, ImageFile, StatusImage } from '../types/shared';
 import { getImageExtension } from '../types/utils';
 import fs from 'fs';
 import { ConversionOptions, ConversionResult } from '../types/conversion';
 
-// Cargar Sharp de forma segura
-let sharp: any = null;
-let sharpAvailable = false;
-
-async function initializeSharp() {
-  try {
-    // Intentar cargar Sharp desde diferentes ubicaciones
-    const possiblePaths = [
-      'sharp', // Desarrollo
-      path.join(process.resourcesPath, 'sharp'), // Empaquetado - extraResources
-      path.join(process.resourcesPath, 'node_modules', 'sharp'), // Empaquetado alternativo
-      path.join(__dirname, '..', '..', 'node_modules', 'sharp'), // Relativo al main
-      path.join(process.cwd(), 'node_modules', 'sharp') // CWD
-    ];
-
-    let sharpModule = null;
-    let loadedFrom = '';
-
-    // Log información de debug
-    console.log('🔍 Buscando Sharp...');
-    console.log('  process.resourcesPath:', process.resourcesPath);
-    console.log('  __dirname:', __dirname);
-    console.log('  process.cwd():', process.cwd());
-    console.log('  app.isPackaged:', require('electron').app.isPackaged);
-
-    for (const sharpPath of possiblePaths) {
-      try {
-        console.log(`  🔍 Intentando cargar desde: ${sharpPath}`);
-        
-        // Verificar si la ruta existe
-        if (sharpPath !== 'sharp') {
-          const exists = require('fs').existsSync(sharpPath);
-          console.log(`     Existe: ${exists}`);
-          if (!exists) continue;
-        }
-        
-        sharpModule = require(sharpPath);
-        loadedFrom = sharpPath;
-        console.log(`✅ Sharp encontrado en: ${sharpPath}`);
-        break;
-      } catch (err) {
-        console.log(`❌ No se pudo cargar Sharp desde: ${sharpPath}`);
-        console.log(`   Error: ${err instanceof Error ? err.message : String(err)}`);
-        continue;
-      }
-    }
-
-    if (sharpModule) {
-      sharp = sharpModule;
-      sharpAvailable = true;
-      console.log(`✅ Sharp cargado correctamente desde: ${loadedFrom}`);
-      
-      // Verificar que Sharp funciona realmente
-      try {
-        await sharp({
-          create: {
-            width: 1,
-            height: 1,
-            channels: 3,
-            background: { r: 255, g: 255, b: 255 }
-          }
-        }).png().toBuffer();
-        console.log('✅ Sharp verificado y funcionando');
-        return true;
-      } catch (testError) {
-        console.error('❌ Sharp cargado pero no funciona:', testError);
-        sharpAvailable = false;
-        return false;
-      }
-    } else {
-      throw new Error('No se encontró Sharp en ninguna ubicación');
-    }
-  } catch (error) {
-    console.error('❌ Error cargando Sharp:', error);
-    console.error('🔧 La conversión de imágenes no estará disponible');
-    sharpAvailable = false;
-    return false;
-  }
-}
-
-// Inicializar Sharp al arrancar
-initializeSharp();
-
 //   Configurar auto-updater - comentado temporalmente hasta tener releases en GitHub
 // autoUpdater.checkForUpdatesAndNotify();
+
+// Configurar logging del auto-updater
+// autoUpdater.logger = console;
+
+//   Eventos del auto-updater - comentados temporalmente
+/*
+autoUpdater.on('checking-for-update', () => {
+  console.log('🔍 Buscando actualizaciones...');
+});
+
+autoUpdater.on('update-available', (info: any) => {
+  console.log('  Actualización disponible:', info.version);
+});
+
+autoUpdater.on('update-not-available', (info: any) => {
+  console.log('ℹ️ No hay actualizaciones disponibles:', info.version);
+});
+
+autoUpdater.on('error', (err: any) => {
+  console.error('❌ Error en auto-updater:', err);
+});
+
+autoUpdater.on('download-progress', (progressObj: any) => {
+  let log_message = "📥 Descargando actualización: " + progressObj.percent + '%';
+  log_message = log_message + ' (' + progressObj.transferred + "/" + progressObj.total + ')';
+  console.log(log_message);
+});
+
+autoUpdater.on('update-downloaded', (info: any) => {
+  console.log('  Actualización descargada:', info.version);
+  // La actualización se instalará al cerrar la app
+});
+*/
 
 const scanFolderForImages = async (folderPath: string): Promise<string[]> => {
   const imagePaths: string[] = [];
@@ -198,16 +209,9 @@ ipcMain.handle('dialog:open', async (_, options): Promise<DialogResult> => {
   return { canceled: result.canceled, files };
 });
 
+
 // generar una vista previa de la imagen en base 64
 ipcMain.handle('imagePreview:get', async (_, filePath: string): Promise<ImagePreviewResult> => {
-  if (!sharpAvailable) {
-    return {
-      preview: '',
-      error: 'Sharp no está disponible. La conversión de imágenes no funciona en esta plataforma.',
-      name: path.basename(filePath)
-    };
-  }
-
   const maxRetries = 3;
   let lastError: any = null;
 
@@ -262,6 +266,7 @@ ipcMain.handle('imagePreview:get', async (_, filePath: string): Promise<ImagePre
         throw new Error('Invalid base64 data generated');
       }
 
+
       return {
         preview: base64,
         name: path.basename(filePath)
@@ -290,6 +295,7 @@ ipcMain.handle('imagePreview:get', async (_, filePath: string): Promise<ImagePre
   };
 });
 
+
 // optener ruta de la carpeta del destino
 ipcMain.handle('dialog:openFolderForOutput', async (_, options): Promise<string> => {
   const result = await dialog.showOpenDialog({
@@ -300,14 +306,12 @@ ipcMain.handle('dialog:openFolderForOutput', async (_, options): Promise<string>
     return result.filePaths[0]
   }
 
+
+
   return '';
 });
 
 ipcMain.handle('convert:images', async (event, { images, outputFormat, quality, outputFolder, isFolderConversion, folderPath }: ConversionOptions): Promise<ConversionResult> => {
-  if (!sharpAvailable) {
-    throw new Error("Sharp no está disponible. La conversión de imágenes no funciona en esta plataforma.");
-  }
-
   let convertedCount = 0;
   let failedCount = 0;
   let results: ConversionResult['details'] = [];
@@ -327,6 +331,8 @@ ipcMain.handle('convert:images', async (event, { images, outputFormat, quality, 
   // Si es conversión por carpeta, usar folderPath directamente
   const isConversionByFolder = isFolderConversion || (folderPath && fs.existsSync(folderPath));
   const baseFolderPath = folderPath || ''; //   folderPath ES el ancestro común más profundo
+
+
 
   // enviar el evento de inicio de la conversion
   event.sender.send('conversion:started', {
@@ -371,6 +377,7 @@ ipcMain.handle('convert:images', async (event, { images, outputFormat, quality, 
         // 📄 Conversión individual - guardar directamente en carpeta de salida
         outputPath = path.join(outputFolder, `${baseName}.${outputFormat}`);
       }
+
 
       // validar que la imagen del mismo tipo no este en la misma ruta de salida
       if (fs.existsSync(outputPath)) {
@@ -483,6 +490,7 @@ ipcMain.handle('convert:images', async (event, { images, outputFormat, quality, 
       console.error(`❌ Failed to convert ${image.path}:`, error);
     }
   }
+
 
   // enviar el evento de finalizacion de la conversion
   console.log('🏁 Enviando evento de conversión finalizada...');

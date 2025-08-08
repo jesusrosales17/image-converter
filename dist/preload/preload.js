@@ -5,7 +5,7 @@ electron_1.contextBridge.exposeInMainWorld('electron', {
     ipcRenderer: {
         invoke: (channel, ...args) => electron_1.ipcRenderer.invoke(channel, ...args),
         on: (channel, listener) => {
-            // ✅ Arreglar el callback para pasar los argumentos correctamente
+            //   Arreglar el callback para pasar los argumentos correctamente
             electron_1.ipcRenderer.on(channel, (_, ...args) => listener(...args));
         },
         off: (channel, listener) => {

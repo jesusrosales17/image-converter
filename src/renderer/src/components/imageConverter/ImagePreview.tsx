@@ -20,8 +20,8 @@ export const ImagePreviewModal = () => {
   }
 
   const renderImageContent = () => {
-    console.log('📸 Preview data:', previewData);
-    
+    console.log("📸 Preview data:", previewData);
+
     if (isLoading) {
       return (
         <LoadingSpinner message="Cargando vista previa..." className="h-64" />
@@ -38,8 +38,8 @@ export const ImagePreviewModal = () => {
       );
     }
 
-    // ✅ Si tenemos preview, intentar mostrarla
-    if (previewData.preview && previewData.preview.trim() !== '') {
+    //   Si tenemos preview, intentar mostrarla
+    if (previewData.preview && previewData.preview.trim() !== "") {
       return (
         <ImageDisplay
           src={previewData.preview}
@@ -48,18 +48,20 @@ export const ImagePreviewModal = () => {
       );
     }
 
-    // ✅ Solo mostrar error si realmente no hay preview
+    //   Solo mostrar error si realmente no hay preview
     return (
       <ErrorDisplay
-        message={`Formato ${getFileExtension(previewData.name)} no compatible con vista previa`}
+        message={`Formato ${getFileExtension(
+          previewData.name
+        )} no compatible con vista previa`}
         className="h-64"
       />
     );
   };
 
-  // ✅ Función helper para obtener extensión
+  //   Función helper para obtener extensión
   const getFileExtension = (filename: string): string => {
-    return filename?.split('.').pop()?.toUpperCase() || 'UNKNOWN';
+    return filename?.split(".").pop()?.toUpperCase() || "UNKNOWN";
   };
 
   return (

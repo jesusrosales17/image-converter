@@ -32,7 +32,7 @@ export const useFileDialog = () => {
       console.error('Error opening single file dialog:', error);
       return [];
     }
-  }, [addImage, clearImages, setIsFolderConversion, setSourceFolderPath]); // ✅ Dependencias correctas
+  }, [addImage, clearImages, setIsFolderConversion, setSourceFolderPath]); //   Dependencias correctas
 
   const openMultipleFilesDialog = useCallback(async () => {
     try {
@@ -45,17 +45,17 @@ export const useFileDialog = () => {
 
       if (result && !result.canceled && result.files.length > 0) {
         const currentState = useImageStore.getState();
-        
+
         if (currentState.isFolderConversion) {
           clearImages(); // Limpiar imágenes antes de agregar nuevas
           setIsFolderConversion(false);
           setSourceFolderPath(''); // Limpiar ruta de carpeta fuente
         }
-        
+
         result.files.forEach(file => {
           addImage(file);
         });
-        
+
         return result.files;
       }
 
@@ -64,7 +64,7 @@ export const useFileDialog = () => {
       console.error('Error opening multiple files dialog:', error);
       return [];
     }
-  }, [addImage, clearImages, setIsFolderConversion, setSourceFolderPath]); 
+  }, [addImage, clearImages, setIsFolderConversion, setSourceFolderPath]);
 
   const openFolderDialog = useCallback(async () => {
     try {
@@ -112,7 +112,7 @@ export const useFileDialog = () => {
       console.error('Error opening folder dialog for output:', error);
       return '';
     }
-  }, [setOutputFolder]); 
+  }, [setOutputFolder]);
 
   return {
     openSingleFileDialog,
