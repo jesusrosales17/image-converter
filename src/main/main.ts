@@ -1,22 +1,69 @@
-import { BrowserWindow, app, ipcMain, dialog, nativeImage } from "electron";
+import { BrowserWindow, app, ipcMain, dialog, nativeImage, Menu } from "electron";
+import { autoUpdater } from "electron-updater";
 import * as path from "path";
-import { DialogResult, ImagePreviewResult } from '../renderer/src/interfaces/fileDialog';
-import fs from 'fs';
-import { getImageExtension } from '../renderer/src/utils/image';
-import { StatusImage } from '../../dist/renderer/src/interfaces/images';
-import { ConversionOptions, ConversionResult } from '../types/conversion';
+
+// ✅ Configurar variables de entorno para Sharp ANTES de importarlo
+if (process.platform === 'linux') {
+  const appPath = app.getAppPath();
+  const sharpLibPath = path.join(appPath, 'node_modules', '@img', 'sharp-linux-x64', 'lib');
+  const currentLdPath = process.env.LD_LIBRARY_PATH || '';
+  process.env.LD_LIBRARY_PATH = `${sharpLibPath}:${currentLdPath}`;
+  
+  console.log('🔧 Configurando LD_LIBRARY_PATH para Sharp:', process.env.LD_LIBRARY_PATH);
+}
+
 import sharp from "sharp";
+import { DialogResult, ImagePreviewResult, ImageFile, StatusImage } from '../types/shared';
+import { getImageExtension } from '../types/utils';
+import fs from 'fs';
+import { ConversionOptions, ConversionResult } from '../types/conversion';
+
+// ✅ Configurar auto-updater - comentado temporalmente hasta tener releases en GitHub
+// autoUpdater.checkForUpdatesAndNotify();
+
+// Configurar logging del auto-updater
+// autoUpdater.logger = console;
+
+// ✅ Eventos del auto-updater - comentados temporalmente
+/*
+autoUpdater.on('checking-for-update', () => {
+  console.log('🔍 Buscando actualizaciones...');
+});
+
+autoUpdater.on('update-available', (info: any) => {
+  console.log('✅ Actualización disponible:', info.version);
+});
+
+autoUpdater.on('update-not-available', (info: any) => {
+  console.log('ℹ️ No hay actualizaciones disponibles:', info.version);
+});
+
+autoUpdater.on('error', (err: any) => {
+  console.error('❌ Error en auto-updater:', err);
+});
+
+autoUpdater.on('download-progress', (progressObj: any) => {
+  let log_message = "📥 Descargando actualización: " + progressObj.percent + '%';
+  log_message = log_message + ' (' + progressObj.transferred + "/" + progressObj.total + ')';
+  console.log(log_message);
+});
+
+autoUpdater.on('update-downloaded', (info: any) => {
+  console.log('✅ Actualización descargada:', info.version);
+  // La actualización se instalará al cerrar la app
+});
+*/
 
 const scanFolderForImages = async (folderPath: string): Promise<string[]> => {
   const imagePaths: string[] = [];
-  
+
   const scanDirectory = async (dirPath: string) => {
     try {
       const items = await fs.promises.readdir(dirPath, { withFileTypes: true });
-      
+
       for (const item of items) {
         const fullPath = path.join(dirPath, item.name);
-        
+
         if (item.isDirectory()) {
           // Recursivamente escanear subdirectorios
           await scanDirectory(fullPath);
@@ -32,86 +79,93 @@ const scanFolderForImages = async (folderPath: string): Promise<string[]> => {
       console.error(`Error scanning directory ${dirPath}:`, error);
     }
   };
-  
+
   await scanDirectory(folderPath);
   return imagePaths;
 };
 
 function createWindow(): void {
-    const windows = new BrowserWindow({
-        width: 1000,
-        title: "Convertidor de imagenes",
-        height: 600,
-        autoHideMenuBar: true,
-        webPreferences: {
-            nodeIntegration: false,
-            contextIsolation: true,
-            preload: path.join(__dirname, '../preload/preload.js')
-        },
-    })
+  const windows = new BrowserWindow({
+    width: 1000,
+    title: "Convertidor de imagenes",
+    height: 600,
+    autoHideMenuBar: true,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, '../preload/preload.js')
+    },
+  })
 
+  // ✅ Cargar la aplicación compilada en lugar de localhost
+  if (app.isPackaged) {
+    // En producción, cargar el HTML compilado
+    windows.loadFile(path.join(__dirname, '../../src/renderer/dist/index.html'));
+  } else {
+    // En desarrollo, usar el servidor de desarrollo
     windows.loadURL('http://localhost:5173/');
+  }
 }
 
 // ipcMain es el proceso principal de Electron que maneja la comunicación entre el proceso principal y los procesos de renderizado
 
 ipcMain.handle('dialog:open', async (_, options): Promise<DialogResult> => {
-    const result = await dialog.showOpenDialog(options);
-    const isModalDirectory = options.properties?.includes('openDirectory');
+  const result = await dialog.showOpenDialog(options);
+  const isModalDirectory = options.properties?.includes('openDirectory');
 
-    if (isModalDirectory) {
-        if (result.canceled || result.filePaths.length === 0) {
-            return { canceled: result.canceled, files: [] };
-        }
-        
-        const selectedFolderPath = result.filePaths[0];
-        
-        // Scan the selected folder for images
-        const imagePaths = await scanFolderForImages(selectedFolderPath);
-        
-        const files = await Promise.all(imagePaths.map(async filePath => {
-            const stat = fs.statSync(filePath);
-            const type = getImageExtension(filePath);
-            return {
-                path: filePath,
-                name: path.basename(filePath),
-                size: stat.size,
-                type: type,
-                status: StatusImage.pending,
-                progress: 0
-            };
-        }));
-        
-        return { 
-            canceled: result.canceled, 
-            files,
-            folderPath: selectedFolderPath, 
-            isFolderSelection: true        
-        };
+  if (isModalDirectory) {
+    if (result.canceled || result.filePaths.length === 0) {
+      return { canceled: result.canceled, files: [] };
     }
 
-    const files = await Promise.all(result.filePaths.map(async filePath => {
-        const stat = fs.statSync(filePath); // para obtener el tamaño
-        const type = getImageExtension(filePath);
-        return {
-            path: filePath,
-            name: path.basename(filePath),
-            size: stat.size,
-            type: type,
-            status: StatusImage.pending,
-            progress: 0
-        };
+    const selectedFolderPath = result.filePaths[0];
+
+    // Scan the selected folder for images
+    const imagePaths = await scanFolderForImages(selectedFolderPath);
+
+    const files = await Promise.all(imagePaths.map(async filePath => {
+      const stat = fs.statSync(filePath);
+      const type = getImageExtension(filePath);
+      return {
+        path: filePath,
+        name: path.basename(filePath),
+        size: stat.size,
+        type: type,
+        status: StatusImage.pending,
+        progress: 0
+      };
     }));
 
-    return { canceled: result.canceled, files };
+    return {
+      canceled: result.canceled,
+      files,
+      folderPath: selectedFolderPath,
+      isFolderSelection: true
+    };
+  }
+
+  const files = await Promise.all(result.filePaths.map(async filePath => {
+    const stat = fs.statSync(filePath); // para obtener el tamaño
+    const type = getImageExtension(filePath);
+    return {
+      path: filePath,
+      name: path.basename(filePath),
+      size: stat.size,
+      type: type,
+      status: StatusImage.pending,
+      progress: 0
+    };
+  }));
+
+  return { canceled: result.canceled, files };
 });
 
 
- // generar una vista previa de la imagen en base 64
+// generar una vista previa de la imagen en base 64
 ipcMain.handle('imagePreview:get', async (_, filePath: string): Promise<ImagePreviewResult> => {
   const maxRetries = 3;
   let lastError: any = null;
-  
+
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       if (!fs.existsSync(filePath)) {
@@ -119,72 +173,72 @@ ipcMain.handle('imagePreview:get', async (_, filePath: string): Promise<ImagePre
       }
 
       const ext = path.extname(filePath).toLowerCase();
-      
+
       if (attempt > 1) {
         await new Promise(resolve => setTimeout(resolve, 100 * attempt));
       }
-      
+
       let sharpInstance = sharp(filePath);
-      
+
       if (ext === '.tiff' || ext === '.tif') {
         sharpInstance = sharpInstance
           .ensureAlpha(0) // Normalizar canal alpha
           .toColorspace('srgb'); // Forzar espacio de color estándar
       }
-      
+
       const data = await Promise.race([
         sharpInstance
-          .resize(800, 800, { 
-            fit: 'inside', 
+          .resize(800, 800, {
+            fit: 'inside',
             withoutEnlargement: true,
             kernel: sharp.kernel.lanczos3 // Mejor algoritmo de redimensionado
           })
-          .jpeg({ 
+          .jpeg({
             quality: 85,
             progressive: true,
-            mozjpeg: false, 
+            mozjpeg: false,
             optimizeCoding: true,
             overshootDeringing: false
           })
           .toBuffer(),
-        new Promise((_, reject) => 
+        new Promise((_, reject) =>
           setTimeout(() => reject(new Error('Timeout generating preview')), 10000)
         )
       ]) as Buffer;
-      
+
       if (!data || data.length === 0) {
         throw new Error('Preview data is empty');
       }
-      
+
       const base64 = `data:image/jpeg;base64,${data.toString('base64')}`;
-      
+
       // ✅ Validar que el base64 es válido
       if (!base64 || base64.length < 100) {
         throw new Error('Invalid base64 data generated');
       }
-      
+
 
       return {
         preview: base64,
         name: path.basename(filePath)
       };
-      
+
     } catch (error) {
       lastError = error;
       const filename = path.basename(filePath);
-      
+
       // Si no es el último intento, continuar con el siguiente
       if (attempt < maxRetries) {
         continue;
       }
     }
   }
-  
+
   // Si llegamos aquí, todos los intentos fallaron
   const filename = path.basename(filePath);
   const ext = path.extname(filePath).toUpperCase();
   console.error(`❌ Error generando preview para ${filename} después de ${maxRetries} intentos:`, lastError);
-  
+
   return {
     preview: '',
     error: `No se pudo generar preview para ${ext} después de ${maxRetries} intentos`,
@@ -195,233 +249,233 @@ ipcMain.handle('imagePreview:get', async (_, filePath: string): Promise<ImagePre
 
 // optener ruta de la carpeta del destino
 ipcMain.handle('dialog:openFolderForOutput', async (_, options): Promise<string> => {
-    const result = await dialog.showOpenDialog({
-        properties: ['openDirectory']
-    });
+  const result = await dialog.showOpenDialog({
+    properties: ['openDirectory']
+  });
 
-    if (result) {
-        return result.filePaths[0]
-    }
+  if (result) {
+    return result.filePaths[0]
+  }
 
 
 
-    return '';
+  return '';
 });
 
 ipcMain.handle('convert:images', async (event, { images, outputFormat, quality, outputFolder, isFolderConversion, folderPath }: ConversionOptions): Promise<ConversionResult> => {
-    let convertedCount = 0;
-    let failedCount = 0;
-    let results: ConversionResult['details'] = [];
-    if (!images || images.length === 0) {
-        throw new Error("No hay imágenes seleccionadas");
-    }
+  let convertedCount = 0;
+  let failedCount = 0;
+  let results: ConversionResult['details'] = [];
+  if (!images || images.length === 0) {
+    throw new Error("No hay imágenes seleccionadas");
+  }
 
-    if (!outputFormat || !outputFolder) {
-        throw new Error("Formato de salida o carpeta de salida no especificados");
-    }
+  if (!outputFormat || !outputFolder) {
+    throw new Error("Formato de salida o carpeta de salida no especificados");
+  }
 
-    // Verificar que la carpeta de salida existe
-    if (!fs.existsSync(outputFolder)) {
-        throw new Error("La carpeta de salida no existe");
-    }
+  // Verificar que la carpeta de salida existe
+  if (!fs.existsSync(outputFolder)) {
+    throw new Error("La carpeta de salida no existe");
+  }
 
-    // Si es conversión por carpeta, usar folderPath directamente
-    const isConversionByFolder = isFolderConversion || (folderPath && fs.existsSync(folderPath));
-    const baseFolderPath = folderPath || ''; // ✅ folderPath ES el ancestro común más profundo
-    
-   
-
-    // enviar el evento de inicio de la conversion
-    event.sender.send('conversion:started', {
-        total: images.length,
-        outputFormat,
-        outputFolder,
-        isFolderConversion: isConversionByFolder
-    });
-
-    // procesar las imagenes una por una
-    for (let i = 0; i < images.length; i++) {
-        const image = images[i];
-        try {
-            event.sender.send('conversion:imageStarted', {
-                imagePath: image.path,
-                currentIndex: i + 1,
-                total: images.length
-            });
-        
-            const inputPath = image.path;
-            const baseName = path.basename(inputPath, path.extname(inputPath));
-
-            let outputPath: string;
-
-            if (isConversionByFolder && baseFolderPath) {
-                // Obtener la ruta relativa desde la carpeta base
-                const relativePath = path.relative(baseFolderPath, inputPath);
-                const relativeDir = path.dirname(relativePath);
-                
-                // Crear la estructura de carpetas en el destino
-                const outputDir = relativeDir === '.' 
-                    ? outputFolder 
-                    : path.join(outputFolder, relativeDir);
-                
-                // Crear directorio si no existe
-                if (!fs.existsSync(outputDir)) {
-                    await fs.promises.mkdir(outputDir, { recursive: true });
-                }
-                
-                outputPath = path.join(outputDir, `${baseName}.${outputFormat}`);
-            } else {
-                // 📄 Conversión individual - guardar directamente en carpeta de salida
-                outputPath = path.join(outputFolder, `${baseName}.${outputFormat}`);
-            }
+  // Si es conversión por carpeta, usar folderPath directamente
+  const isConversionByFolder = isFolderConversion || (folderPath && fs.existsSync(folderPath));
+  const baseFolderPath = folderPath || ''; // ✅ folderPath ES el ancestro común más profundo
 
 
-            // validar que la imagen del mismo tipo no este en la misma ruta de salida
-            if (fs.existsSync(outputPath)) {
-                // si la imagen es del mismo tipo a convertir marcar automaticamente en completada
-                results.push({
-                    originalPath: inputPath,
-                    outputPath,
-                    success: true
-                });
-                convertedCount++;
-                event.sender.send('conversion:imageCompleted', {
-                    imagePath: inputPath,
-                    outputPath,
-                    success: true,
-                    currentIndex: i + 1,
-                    total: images.length
-                });
-                continue;
-            }
 
-            let sharpInstance = sharp(inputPath);
-            
-            const inputExt = path.extname(inputPath).toLowerCase();
-            if (inputExt === '.tiff' || inputExt === '.tif') {
-                sharpInstance = sharpInstance
-                    .ensureAlpha(0) // Normalizar canal alpha
-                    .toColorspace('srgb'); // Forzar espacio de color estándar
-            }
+  // enviar el evento de inicio de la conversion
+  event.sender.send('conversion:started', {
+    total: images.length,
+    outputFormat,
+    outputFolder,
+    isFolderConversion: isConversionByFolder
+  });
 
-            switch (outputFormat) {
-                case 'jpeg':
-                case 'jpg':
-                    sharpInstance = sharpInstance.jpeg({
-                        quality,
-                        progressive: true,
-                        mozjpeg: true
-                    });
-                    break;
+  // procesar las imagenes una por una
+  for (let i = 0; i < images.length; i++) {
+    const image = images[i];
+    try {
+      event.sender.send('conversion:imageStarted', {
+        imagePath: image.path,
+        currentIndex: i + 1,
+        total: images.length
+      });
 
-                case 'webp':
-                    sharpInstance = sharpInstance.webp({
-                        quality,
-                        effort: 6 // Mejor compresión
-                    });
-                    break;
+      const inputPath = image.path;
+      const baseName = path.basename(inputPath, path.extname(inputPath));
 
-                case 'png':
-                    sharpInstance = sharpInstance.png({
-                        compressionLevel: 6,
-                        progressive: true
-                    });
-                    break;
+      let outputPath: string;
 
-                case 'avif':
-                    sharpInstance = sharpInstance.avif({
-                        quality,
-                        effort: 6
-                    });
-                    break;
+      if (isConversionByFolder && baseFolderPath) {
+        // Obtener la ruta relativa desde la carpeta base
+        const relativePath = path.relative(baseFolderPath, inputPath);
+        const relativeDir = path.dirname(relativePath);
 
-                case 'tiff':
-                    sharpInstance = sharpInstance.tiff({
-                        quality,
-                        compression: 'jpeg'
-                    });
-                    break;
-                    
-                default:
-                    throw new Error(`Formato de salida no soportado: ${outputFormat}`);
-            }
+        // Crear la estructura de carpetas en el destino
+        const outputDir = relativeDir === '.'
+          ? outputFolder
+          : path.join(outputFolder, relativeDir);
 
-            await sharpInstance.toFile(outputPath);
-
-            results.push({
-                originalPath: inputPath,
-                outputPath,
-                success: true
-            });
-            convertedCount++;
-
-            // ✅ Evento de imagen completada
-            event.sender.send('conversion:imageCompleted', {
-                imagePath: inputPath,
-                outputPath,
-                success: true,
-                currentIndex: i + 1,
-                total: images.length
-            });
-
-            console.log(`✅ Converted: ${inputPath} → ${outputPath}`);
-        } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
-
-            results.push({
-                originalPath: image.path,
-                success: false,
-                error: errorMessage
-            });
-
-            failedCount++;
-            
-            // ✅ Evento de imagen con error
-            event.sender.send('conversion:imageError', {
-                imagePath: image.path,
-                error: errorMessage,
-                success: false,
-                currentIndex: i + 1,
-                total: images.length
-            });
-            console.error(`❌ Failed to convert ${image.path}:`, error);
+        // Crear directorio si no existe
+        if (!fs.existsSync(outputDir)) {
+          await fs.promises.mkdir(outputDir, { recursive: true });
         }
+
+        outputPath = path.join(outputDir, `${baseName}.${outputFormat}`);
+      } else {
+        // 📄 Conversión individual - guardar directamente en carpeta de salida
+        outputPath = path.join(outputFolder, `${baseName}.${outputFormat}`);
+      }
+
+
+      // validar que la imagen del mismo tipo no este en la misma ruta de salida
+      if (fs.existsSync(outputPath)) {
+        // si la imagen es del mismo tipo a convertir marcar automaticamente en completada
+        results.push({
+          originalPath: inputPath,
+          outputPath,
+          success: true
+        });
+        convertedCount++;
+        event.sender.send('conversion:imageCompleted', {
+          imagePath: inputPath,
+          outputPath,
+          success: true,
+          currentIndex: i + 1,
+          total: images.length
+        });
+        continue;
+      }
+
+      let sharpInstance = sharp(inputPath);
+
+      const inputExt = path.extname(inputPath).toLowerCase();
+      if (inputExt === '.tiff' || inputExt === '.tif') {
+        sharpInstance = sharpInstance
+          .ensureAlpha(0) // Normalizar canal alpha
+          .toColorspace('srgb'); // Forzar espacio de color estándar
+      }
+
+      switch (outputFormat) {
+        case 'jpeg':
+        case 'jpg':
+          sharpInstance = sharpInstance.jpeg({
+            quality,
+            progressive: true,
+            mozjpeg: true
+          });
+          break;
+
+        case 'webp':
+          sharpInstance = sharpInstance.webp({
+            quality,
+            effort: 6 // Mejor compresión
+          });
+          break;
+
+        case 'png':
+          sharpInstance = sharpInstance.png({
+            compressionLevel: 6,
+            progressive: true
+          });
+          break;
+
+        case 'avif':
+          sharpInstance = sharpInstance.avif({
+            quality,
+            effort: 6
+          });
+          break;
+
+        case 'tiff':
+          sharpInstance = sharpInstance.tiff({
+            quality,
+            compression: 'jpeg'
+          });
+          break;
+
+        default:
+          throw new Error(`Formato de salida no soportado: ${outputFormat}`);
+      }
+
+      await sharpInstance.toFile(outputPath);
+
+      results.push({
+        originalPath: inputPath,
+        outputPath,
+        success: true
+      });
+      convertedCount++;
+
+      // ✅ Evento de imagen completada
+      event.sender.send('conversion:imageCompleted', {
+        imagePath: inputPath,
+        outputPath,
+        success: true,
+        currentIndex: i + 1,
+        total: images.length
+      });
+
+      console.log(`✅ Converted: ${inputPath} → ${outputPath}`);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+
+      results.push({
+        originalPath: image.path,
+        success: false,
+        error: errorMessage
+      });
+
+      failedCount++;
+
+      // ✅ Evento de imagen con error
+      event.sender.send('conversion:imageError', {
+        imagePath: image.path,
+        error: errorMessage,
+        success: false,
+        currentIndex: i + 1,
+        total: images.length
+      });
+      console.error(`❌ Failed to convert ${image.path}:`, error);
     }
+  }
 
 
-    // enviar el evento de finalizacion de la conversion
-    console.log('🏁 Enviando evento de conversión finalizada...');
-    console.log(`📊 Estadísticas: ${convertedCount} exitosas, ${failedCount} fallidas de ${images.length} total`);
-    event.sender.send('conversion:finished', {
-        total: images.length,
-        convertedCount,
-        failedCount,
-        results
-    });
+  // enviar el evento de finalizacion de la conversion
+  console.log('🏁 Enviando evento de conversión finalizada...');
+  console.log(`📊 Estadísticas: ${convertedCount} exitosas, ${failedCount} fallidas de ${images.length} total`);
+  event.sender.send('conversion:finished', {
+    total: images.length,
+    convertedCount,
+    failedCount,
+    results
+  });
 
-    return {
-        success: failedCount === 0,
-        convertedCount,
-        failedCount,
-        details: results
-    };
+  return {
+    success: failedCount === 0,
+    convertedCount,
+    failedCount,
+    details: results
+  };
 });
 
 app.whenReady().then(() => {
-    // crear la ventana principal
-    createWindow();
+  // crear la ventana principal
+  createWindow();
 
-    // abir una nueva ventana cuando se haga clic en el icono de la aplicacion en el dock (macOS)
-    app.on('activate', () => {
-        if (BrowserWindow.getAllWindows().length === 0) {
-            createWindow();
-        }
-    })
+  // abir una nueva ventana cuando se haga clic en el icono de la aplicacion en el dock (macOS)
+  app.on('activate', () => {
+    if (BrowserWindow.getAllWindows().length === 0) {
+      createWindow();
+    }
+  })
 })
 
 // cerrar la aplicacion cuando todas las ventanas esten cerradas en sistemas que no sean macOS
 app.on('window-all-closed', () => {
-    if (process.platform !== 'darwin') {
-        app.quit()
-    }
+  if (process.platform !== 'darwin') {
+    app.quit()
+  }
 })

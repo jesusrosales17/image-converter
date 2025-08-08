@@ -6,6 +6,12 @@ import { defineConfig } from "vite"
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  base: "./", // ✅ Usar rutas relativas para Electron
+  build: {
+    outDir: "dist",
+    assetsDir: "assets",
+    emptyOutDir: true
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

@@ -38,10 +38,51 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const electron_1 = require("electron");
 const path = __importStar(require("path"));
-const fs_1 = __importDefault(require("fs"));
-const image_1 = require("../renderer/src/utils/image");
-const images_1 = require("../../dist/renderer/src/interfaces/images");
+// ✅ Configurar variables de entorno para Sharp ANTES de importarlo
+if (process.platform === 'linux') {
+    const appPath = electron_1.app.getAppPath();
+    const sharpLibPath = path.join(appPath, 'node_modules', '@img', 'sharp-linux-x64', 'lib');
+    const currentLdPath = process.env.LD_LIBRARY_PATH || '';
+    process.env.LD_LIBRARY_PATH = `${sharpLibPath}:${currentLdPath}`;
+    console.log('🔧 Configurando LD_LIBRARY_PATH para Sharp:', process.env.LD_LIBRARY_PATH);
+}
 const sharp_1 = __importDefault(require("sharp"));
+const shared_1 = require("../types/shared");
+const utils_1 = require("../types/utils");
+const fs_1 = __importDefault(require("fs"));
+// ✅ Configurar auto-updater - comentado temporalmente hasta tener releases en GitHub
+// autoUpdater.checkForUpdatesAndNotify();
+// Configurar logging del auto-updater
+// autoUpdater.logger = console;
+// ✅ Eventos del auto-updater - comentados temporalmente
+/*
+autoUpdater.on('checking-for-update', () => {
+  console.log('🔍 Buscando actualizaciones...');
+});
+
+autoUpdater.on('update-available', (info: any) => {
+  console.log('✅ Actualización disponible:', info.version);
+});
+
+autoUpdater.on('update-not-available', (info: any) => {
+  console.log('ℹ️ No hay actualizaciones disponibles:', info.version);
+});
+
+autoUpdater.on('error', (err: any) => {
+  console.error('❌ Error en auto-updater:', err);
+});
+
+autoUpdater.on('download-progress', (progressObj: any) => {
+  let log_message = "📥 Descargando actualización: " + progressObj.percent + '%';
+  log_message = log_message + ' (' + progressObj.transferred + "/" + progressObj.total + ')';
+  console.log(log_message);
+});
+
+autoUpdater.on('update-downloaded', (info: any) => {
+  console.log('✅ Actualización descargada:', info.version);
+  // La actualización se instalará al cerrar la app
+});
+*/
 const scanFolderForImages = async (folderPath) => {
     const imagePaths = [];
     const scanDirectory = async (dirPath) => {
@@ -81,7 +122,15 @@ function createWindow() {
             preload: path.join(__dirname, '../preload/preload.js')
         },
     });
-    windows.loadURL('http://localhost:5173/');
+    // ✅ Cargar la aplicación compilada en lugar de localhost
+    if (electron_1.app.isPackaged) {
+        // En producción, cargar el HTML compilado
+        windows.loadFile(path.join(__dirname, '../../src/renderer/dist/index.html'));
+    }
+    else {
+        // En desarrollo, usar el servidor de desarrollo
+        windows.loadURL('http://localhost:5173/');
+    }
 }
 // ipcMain es el proceso principal de Electron que maneja la comunicación entre el proceso principal y los procesos de renderizado
 electron_1.ipcMain.handle('dialog:open', async (_, options) => {
@@ -96,13 +145,13 @@ electron_1.ipcMain.handle('dialog:open', async (_, options) => {
         const imagePaths = await scanFolderForImages(selectedFolderPath);
         const files = await Promise.all(imagePaths.map(async (filePath) => {
             const stat = fs_1.default.statSync(filePath);
-            const type = (0, image_1.getImageExtension)(filePath);
+            const type = (0, utils_1.getImageExtension)(filePath);
             return {
                 path: filePath,
                 name: path.basename(filePath),
                 size: stat.size,
                 type: type,
-                status: images_1.StatusImage.pending,
+                status: shared_1.StatusImage.pending,
                 progress: 0
             };
         }));
@@ -115,13 +164,13 @@ electron_1.ipcMain.handle('dialog:open', async (_, options) => {
     }
     const files = await Promise.all(result.filePaths.map(async (filePath) => {
         const stat = fs_1.default.statSync(filePath); // para obtener el tamaño
-        const type = (0, image_1.getImageExtension)(filePath);
+        const type = (0, utils_1.getImageExtension)(filePath);
         return {
             path: filePath,
             name: path.basename(filePath),
             size: stat.size,
             type: type,
-            status: images_1.StatusImage.pending,
+            status: shared_1.StatusImage.pending,
             progress: 0
         };
     }));
