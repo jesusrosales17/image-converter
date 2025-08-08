@@ -94,7 +94,7 @@ La app verifica actualizaciones desde GitHub Releases. Para usar tu propio repo:
 
 ```bash
 export GH_TOKEN="tu-github-token"
-pnpm run publish
+npm run publish
 ```
 
 ## 📥 Descargas
@@ -102,7 +102,7 @@ pnpm run publish
 ### Windows
 
 - [Instalador (EXE)](https://github.com/jesusrosales17/image-converter/releases/download/v1.0.0/Image-Converter-1.0.0-win.exe)
-- [Portable (ZIP)](https://github.com/jesusrosales17/image-converter/releases/download/v1.0.0/Image-Converter-1.0.0-win-x64.exe)
+- [Portable ](https://github.com/jesusrosales17/image-converter/releases/download/v1.0.0/Image-Converter-1.0.0-win-x64.exe)
 
 ### Linux
 
