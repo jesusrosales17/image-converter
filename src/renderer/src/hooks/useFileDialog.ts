@@ -6,7 +6,8 @@ import { useCallback } from 'react';
 
 
 export const useFileDialog = () => {
-    const {addImage, setOutputFolder, clearImages, setIsFolderConversion, setSourceFolderPath} = useImageStore();
+  const { addImage, setOutputFolder, clearImages, setIsFolderConversion, setSourceFolderPath, isFolderConversion } = useImageStore();
+
   const openSingleFileDialog = useCallback(async () => {
     try {
       const result: DialogResult = await window.electron.ipcRenderer.invoke('dialog:open', {
@@ -16,8 +17,13 @@ export const useFileDialog = () => {
         ]
       });
       if (result && !result.canceled && result.files.length > 0) {
+        if (isFolderConversion) {
+          clearImages(); // Limpiar imágenes antes de agregar nuevas
+          setIsFolderConversion(false);
+          setSourceFolderPath(''); // Limpiar ruta de carpeta fuente
+        }
         result.files.map(file => {
-            addImage(file);
+          addImage(file);
         })
       }
       return [];
@@ -35,13 +41,18 @@ export const useFileDialog = () => {
           { name: 'Images', extensions: EXTENSIONS }
         ]
       });
-      
+
       if (result && !result.canceled && result.files.length > 0) {
+        if (isFolderConversion) {
+          clearImages(); // Limpiar imágenes antes de agregar nuevas
+          setIsFolderConversion(false);
+          setSourceFolderPath(''); // Limpiar ruta de carpeta fuente
+        }
         return result.files.map(file => {
-            addImage(file);
+          addImage(file);
         });
       }
-      
+
       return [];
     } catch (error) {
       console.error('Error opening multiple files dialog:', error);
@@ -54,22 +65,22 @@ export const useFileDialog = () => {
       const result: DialogResult = await window.electron.ipcRenderer.invoke('dialog:open', {
         properties: ['openDirectory']
       });
-      
+
       if (result && !result.canceled && result.files.length > 0) {
         clearImages(); // Limpiar imágenes antes de agregar nuevas
-        
+
         setIsFolderConversion(true);
         if (result.folderPath) {
           setSourceFolderPath(result.folderPath);
         }
-        
-        result.files.forEach(image=> {
+
+        result.files.forEach(image => {
           addImage(image);
         });
-        
+
         return result.files;
       }
-      
+
       return [];
     } catch (error) {
       console.error('Error opening folder dialog:', error);
@@ -84,7 +95,7 @@ export const useFileDialog = () => {
         properties: ['openDirectory']
       });
 
-    if (result) {
+      if (result) {
         // Aquí puedes manejar la carpeta seleccionada para la salida
         setOutputFolder(result);
         return result;

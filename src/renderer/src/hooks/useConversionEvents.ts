@@ -12,17 +12,14 @@ export const useConversionEvents = () => {
     const toastShownRef = useRef(false);
 
     useEffect(() => {
-        // ✅ Evitar múltiples registros a nivel global y local
         if (isListenerRegistered.current || globalListenersRegistered) {
-            console.log("🚫 Listeners ya registrados, evitando duplicado");
             return;
         }
 
-        // 🔄 Evento: Conversión iniciada
         const handleConversionStarted = (data: { total: number }) => {
             console.log(`Iniciando conversión de ${data.total} imágenes`);
-            toastShownRef.current = false; // ✅ Resetear flag al iniciar nueva conversión
-            globalToastShown = false; // ✅ Resetear flag global
+            toastShownRef.current = false; 
+            globalToastShown = false; 
             
             // Obtener imágenes actuales del store directamente
             const currentImages = useImageStore.getState().images;
@@ -34,7 +31,6 @@ export const useConversionEvents = () => {
             setImages(updatedImages);
         };
 
-        // 🔄 Evento: Imagen iniciada
         const handleImageStarted = (data: { 
             imagePath: string; 
             currentIndex: number; 
@@ -52,24 +48,16 @@ export const useConversionEvents = () => {
             currentIndex: number;
             total: number;
         }) => {
-            console.log(`✅ Completada ${data.currentIndex}/${data.total}: ${data.imagePath}`);
             updateImageStatus(data.imagePath, 'completed', 100);
             
-            // // ✅ Solo toast individual, NO el de "conversión completada"
-            // toast.success(`Imagen ${data.currentIndex}/${data.total} convertida`, {
-            //     description: `${data.imagePath.split('/').pop()}`,
-            //     duration: 1500 // Reducir duración para evitar spam
-            // });
         };
 
-        // 🔄 Evento: Error en imagen
         const handleImageError = (data: {
             imagePath: string;
             error: string;
             currentIndex: number;
             total: number;
         }) => {
-            console.error(`❌ Error ${data.currentIndex}/${data.total}: ${data.imagePath}`, data.error);
             updateImageStatus(data.imagePath, 'error', 0);
             
             toast.error(`Error en imagen ${data.currentIndex}/${data.total}`, {
@@ -78,22 +66,16 @@ export const useConversionEvents = () => {
             });
         };
 
-        // 🔄 Evento: Conversión finalizada
         const handleConversionFinished = (data: {
             convertedCount: number;
             failedCount: number;
             total: number;
         }) => {
-            console.log(`🏁 Conversión finalizada recibida: ${data.convertedCount} exitosas, ${data.failedCount} fallidas`);
-            console.log(`🔍 Estado del toast: local=${toastShownRef.current}, global=${globalToastShown}`);
             
-            // ✅ Solo UNA notificación final usando flag global y local
             if (toastShownRef.current || globalToastShown) {
-                console.log("🚫 Toast ya mostrado, evitando duplicado");
                 return;
             }
             
-            console.log("✅ Mostrando toast de finalización");
             toastShownRef.current = true;
             globalToastShown = true;
             
@@ -110,8 +92,6 @@ export const useConversionEvents = () => {
             }
         };
 
-        // 📡 Registrar eventos UNA SOLA VEZ
-        console.log("📡 Registrando listeners de conversión...");
         window.electron.ipcRenderer.on('conversion:started', handleConversionStarted);
         window.electron.ipcRenderer.on('conversion:imageStarted', handleImageStarted);
         window.electron.ipcRenderer.on('conversion:imageCompleted', handleImageCompleted);
@@ -120,11 +100,8 @@ export const useConversionEvents = () => {
 
         isListenerRegistered.current = true;
         globalListenersRegistered = true;
-        console.log("✅ Listeners registrados correctamente");
 
-        // 🧹 Cleanup
         return () => {
-            console.log("🧹 Limpiando listeners de conversión...");
             window.electron.ipcRenderer.off('conversion:started', handleConversionStarted);
             window.electron.ipcRenderer.off('conversion:imageStarted', handleImageStarted);
             window.electron.ipcRenderer.off('conversion:imageCompleted', handleImageCompleted);
@@ -135,7 +112,6 @@ export const useConversionEvents = () => {
             toastShownRef.current = false;
             globalListenersRegistered = false;
             globalToastShown = false;
-            console.log("✅ Listeners limpiados correctamente");
         };
-    }, []); // ✅ Sin dependencias para evitar re-registros
+    }, []); 
 };
