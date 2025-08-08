@@ -101,13 +101,13 @@ pnpm run publish
 
 ### Windows
 
-- [Instalador (EXE)](Image-Converter-1.0.0-win.exe)
-- [Portable (ZIP)](Image-Converter-1.0.0-win-x64.exe)
+- [Instalador (EXE)](https://github.com/jesusrosales17/image-converter/releases/download/v1.0.0/Image-Converter-1.0.0-win.exe)
+- [Portable (ZIP)](https://github.com/jesusrosales17/image-converter/releases/download/v1.0.0/Image-Converter-1.0.0-win-x64.exe)
 
 ### Linux
 
-- [AppImage](Image-Converter-1.0.0-linux-x86_64.AppImage)
-- [Tar.gz](Image-Converter-1.0.0-linux-x64.tar.gz)
+- [AppImage](https://github.com/jesusrosales17/image-converter/releases/download/v1.0.0/Image-Converter-1.0.0-linux-x86_64.AppImage)
+- [Tar.gz](https://github.com/jesusrosales17/image-converter/releases/download/v1.0.0/Image-Converter-1.0.0-linux-x64.tar.gz)
 
 ## 🎯 Uso
 
