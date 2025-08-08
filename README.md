@@ -97,6 +97,19 @@ export GH_TOKEN="tu-github-token"
 pnpm run publish
 ```
 
+
+## 📥 Descargas
+
+### Windows
+
+- [Instalador (EXE)](https://github.com/jesusrosales17/image-converter/releases/latest/download/Image%20Converter-1.0.0-win-x64.exe)
+- [Portable (ZIP)](https://github.com/jesusrosales17/image-converter/releases/latest/download/Image%20Converter-1.0.0-win.zip)
+
+### Linux
+
+- [AppImage](https://github.com/jesusrosales17/image-converter/releases/latest/download/Image%20Converter-1.0.0-linux-x86_64.AppImage)
+- [Tar.gz](https://github.com/jesusrosales17/image-converter/releases/latest/download/Image%20Converter-1.0.0-linux-x64.tar.gz)
+
 ## 🎯 Uso
 
 1. Selecciona imágenes (individual, múltiple o carpeta)
