@@ -1,5 +1,4 @@
 import { BrowserWindow, app, ipcMain, dialog } from "electron";
-import { autoUpdater } from "electron-updater";
 import * as path from "path";
 import { DialogResult, ImagePreviewResult, ImageFile, StatusImage } from '../types/shared';
 import { getImageExtension } from '../types/utils';
@@ -34,14 +33,14 @@ async function initializeSharp() {
     for (const sharpPath of possiblePaths) {
       try {
         console.log(`  🔍 Intentando cargar desde: ${sharpPath}`);
-        
+
         // Verificar si la ruta existe
         if (sharpPath !== 'sharp') {
           const exists = require('fs').existsSync(sharpPath);
           console.log(`     Existe: ${exists}`);
           if (!exists) continue;
         }
-        
+
         sharpModule = require(sharpPath);
         loadedFrom = sharpPath;
         console.log(`✅ Sharp encontrado en: ${sharpPath}`);
@@ -57,7 +56,7 @@ async function initializeSharp() {
       sharp = sharpModule;
       sharpAvailable = true;
       console.log(`✅ Sharp cargado correctamente desde: ${loadedFrom}`);
-      
+
       // Verificar que Sharp funciona realmente
       try {
         await sharp({
@@ -396,7 +395,7 @@ ipcMain.handle('convert:images', async (event, { images, outputFormat, quality, 
       const inputExt = path.extname(inputPath).toLowerCase();
       if (inputExt === '.tiff' || inputExt === '.tif') {
         sharpInstance = sharpInstance
-          .ensureAlpha(0) // Normalizar canal alpha
+          .removeAlpha()
           .toColorspace('srgb'); // Forzar espacio de color estándar
       }
 

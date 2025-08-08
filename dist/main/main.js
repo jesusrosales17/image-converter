@@ -378,7 +378,7 @@ electron_1.ipcMain.handle('convert:images', async (event, { images, outputFormat
             const inputExt = path.extname(inputPath).toLowerCase();
             if (inputExt === '.tiff' || inputExt === '.tif') {
                 sharpInstance = sharpInstance
-                    .ensureAlpha(0) // Normalizar canal alpha
+                    .removeAlpha()
                     .toColorspace('srgb'); // Forzar espacio de color estándar
             }
             switch (outputFormat) {

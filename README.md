@@ -1,33 +1,25 @@
 # Convertidor de Imágenes
 
-Un conversor de imágenes profesional desarrollado con Electron, React, TypeScript y Sharp. Permite convertir imágenes entre diferentes formatos con calidad profesional y soporte para múltiples modos de selección.
+Conversor multiplataforma profesional desarrollado con Electron, React, Zustand y Sharp. Permite convertir imágenes entre formatos populares, manteniendo la estructura de carpetas, con previews y estado en tiempo real. Robusto y portable para Linux, Windows y Mac.
 
-## 🚀 Características
+## 🚀 Características principales
 
-- **Múltiples formatos soportados**: JPEG, PNG, WebP, AVIF, TIFF
-- **Escaneo recursivo de carpetas**: Mantiene la estructura de subcarpetas
-- **Conversión por lotes**: Procesa múltiples imágenes simultáneamente
-- **Calidad ajustable**: Control de compresión de 1-100%
-- **Vista previa en tiempo real**: Previsualización de imágenes antes de convertir
-- **Auto-actualizaciones**: Sistema automático de actualizaciones
-- **Multiplataforma**: Compatible con Linux, Windows y macOS
-- **Interfaz moderna**: UI intuitiva y responsive
+- **Formatos soportados:** JPEG, PNG, WebP, AVIF, TIFF
+- **Escaneo recursivo:** Mantiene subcarpetas
+- **Conversión por lotes:** Procesa muchas imágenes a la vez
+- **Calidad ajustable:** Compresión 1-100%
+- **Vista previa:** Previsualización antes de convertir
+- **Auto-actualizaciones:** Integrado (GitHub Releases)
+- **Multiplataforma:** Linux, Windows, macOS
+- **Interfaz moderna:** UI intuitiva y responsive
 
-## 📁 Modos de Selección
+## 📁 Modos de selección
 
-### 1. Archivo Individual
+- **Archivo individual:** Permite seleccionar una sola imagen
+- **Archivos múltiples:** Permite seleccionar varias imágenes.
+- **Carpeta completa:** Convierte todas las imágenes de una carpeta y subcarpetas, manteniendo la estructura
 
-Selecciona una sola imagen para convertir.
-
-### 2. Archivos Múltiples
-
-Selecciona varias imágenes individualmente desde diferentes ubicaciones.
-
-### 3. Carpeta Completa
-
-Selecciona una carpeta y convierte automáticamente todas las imágenes encontradas en ella y sus subcarpetas, manteniendo la estructura original.
-
-## 🛠️ Desarrollo
+## 🛠️ Instalación y desarrollo
 
 ### Prerrequisitos
 
@@ -37,85 +29,54 @@ Selecciona una carpeta y convierte automáticamente todas las imágenes encontra
 ### Instalación
 
 ```bash
-# Clonar el repositorio
-git clone https://github.com/tuusuario/convertidor_imagenes.git
+git clone https://github.com/jesusrosales17/image-converter.git
 cd convertidor_imagenes
-
-# Instalar dependencias del main process
 npm install
-
-# Instalar dependencias del renderer process
 cd src/renderer
-pnpm install o npm install
+npm install # o npm install
 cd ../..
 ```
 
-### Scripts de Desarrollo
+### Desarrollo
+
+Ejecuta primero el renderer (React) y luego el main process:
 
 ```bash
-# Modo desarrollo
-pnpm run dev
-
-# Compilar TypeScript
-pnpm run build
-
-# Compilar renderer
-pnpm run build:renderer
-
-# Compilar todo
-pnpm run build:all
+npm run dev # Hot reload
 ```
 
-### Construcción de Binarios
-
-#### Linux
+### Build y distribución
 
 ```bash
-# AppImage, DEB, RPM y TAR.GZ
-pnpm run electron:build:linux
+# Linux (AppImage, DEB, RPM, TAR.GZ)
+npm run electron:build:linux
+# Windows (NSIS installer, portable)
+npm run electron:build:win
+# macOS (DMG, ZIP)
+npm run electron:build:mac
+# Todas las plataformas
+npm run electron:build
 ```
 
-#### Windows
-
-```bash
-# NSIS installer y portable
-pnpm run electron:build:win
-```
-
-#### macOS
-
-```bash
-# DMG y ZIP
-pnpm run electron:build:mac
-```
-
-#### Todas las plataformas
-
-```bash
-pnpm run electron:build
-```
-
-## 📦 Estructura del Proyecto
+## 📦 Estructura del proyecto
 
 ```
 convertidor_imagenes/
 ├── src/
 │   ├── main/           # Main process (Electron)
 │   ├── preload/        # Preload scripts
-│   ├── renderer/       # Renderer process (React)
+│   ├── renderer/       # Renderer (React)
 │   └── types/          # Tipos compartidos
-├── assets/             # Iconos de la aplicación
+├── assets/             # Iconos
 ├── dist/               # Archivos compilados
 └── release/            # Binarios generados
 ```
 
-## 🔧 Configuración
+## 🔧 Configuración de auto-actualizaciones
 
-### Auto-actualizaciones
+La app verifica actualizaciones desde GitHub Releases. Para usar tu propio repo:
 
-La aplicación está configurada para verificar automáticamente actualizaciones desde GitHub Releases. Para configurar tu propio repositorio:
-
-1. Actualiza el `package.json`:
+1. Edita `package.json`:
 
 ```json
 {
@@ -129,57 +90,54 @@ La aplicación está configurada para verificar automáticamente actualizaciones
 }
 ```
 
-2. Configura un GitHub token para publicar:
+2. Configura tu token:
 
 ```bash
 export GH_TOKEN="tu-github-token"
 pnpm run publish
 ```
 
-## 🎯 Uso de la Aplicación
+## 🎯 Uso
 
-1. **Seleccionar imágenes**: Elige archivos individuales, múltiples o una carpeta completa
-2. **Configurar conversión**:
-   - Formato de salida (JPEG, PNG, WebP, AVIF, TIFF)
-   - Calidad de compresión (1-100%)
-   - Carpeta de destino
-3. **Iniciar conversión**: El progreso se muestra en tiempo real
-4. **Revisar resultados**: Las imágenes convertidas mantienen la estructura original
+1. Selecciona imágenes (individual, múltiple o carpeta)
+2. Configura conversión: formato, calidad, carpeta destino
+3. Inicia conversión y revisa el progreso en tiempo real
+4. Las imágenes convertidas mantienen la estructura original
 
-## 💡 Tips y Recomendaciones
+## 💡 Tips
 
-- **WebP**: Mejor compresión, ideal para web
-- **AVIF**: Máxima compresión, soporte moderno
-- **PNG**: Sin pérdida, ideal para logos y gráficos
-- **Calidad 80-90**: Buen balance entre tamaño y calidad
+- **WebP:** Mejor compresión para web
+- **AVIF:** Máxima compresión, soporte moderno
+- **PNG:** Sin pérdida, ideal para logos
+- **Calidad 80-90:** Buen balance
 - Los archivos existentes se omiten automáticamente
 
-## 🔄 Comportamiento de Limpieza
+## 🔄 Limpieza automática
 
-La aplicación limpia automáticamente la lista cuando cambias entre modos de selección:
+La lista se limpia al cambiar de modo:
 
-- **Carpeta → Individual/Múltiple**: Se eliminan todas las imágenes de la carpeta
-- **Individual/Múltiple → Carpeta**: Se eliminan todos los archivos individuales previos
+- Carpeta → Individual/Múltiple: elimina imágenes de carpeta
+- Individual/Múltiple → Carpeta: elimina archivos individuales
 
 ## 📝 Licencia
 
-MIT License - ver archivo [LICENSE](LICENSE) para más detalles.
+MIT License - ver [LICENSE](LICENSE)
 
 ## 🤝 Contribuir
 
-1. Fork el proyecto
-2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
-3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
-4. Push a la rama (`git push origin feature/AmazingFeature`)
+1. Haz fork
+2. Crea una rama (`git checkout -b feature/LoQueSea`)
+3. Commit (`git commit -m 'LoQueSea'`)
+4. Push (`git push origin feature/LoQueSea`)
 5. Abre un Pull Request
 
 ## 📞 Soporte
 
-Si encuentras algún problema o tienes sugerencias, por favor:
+Si tienes problemas o sugerencias:
 
-- Abre un [issue](https://github.com/tuusuario/convertidor_imagenes/issues)
-- Revisa la [documentación](https://github.com/tuusuario/convertidor_imagenes/wiki)
+- Abre un [issue](https://github.com/jesusrosales17/image-converter/issues)
+- Revisa la [wiki](https://github.com/jesusrosales17/image-converter.git/wiki)
 
 ---
 
-Desarrollado con ❤️ usando Electron + React + TypeScript + Sharp
+Desarrollado usando Electron + React + Zustand + Sharp
