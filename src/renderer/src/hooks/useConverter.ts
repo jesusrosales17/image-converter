@@ -28,8 +28,7 @@ export const useConverter = () => {
         }
 
         try {
-            // 🔄 Los eventos se manejan automáticamente en useConversionEvents
-            const result = await window.electron.ipcRenderer.invoke('convert:images', {
+        await window.electron.ipcRenderer.invoke('convert:images', {
                 images,
                 outputFormat,
                 quality,
@@ -38,8 +37,6 @@ export const useConverter = () => {
                 folderPath: sourceFolderPath  
             });
 
-            // Ya no necesitas actualizar manualmente aquí
-            // Los eventos lo hacen en tiempo real
 
         } catch (error) {
             console.log(error);
