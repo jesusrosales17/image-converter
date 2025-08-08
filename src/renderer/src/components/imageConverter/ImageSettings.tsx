@@ -63,7 +63,10 @@ export const ImageSettings = () => {
         <div className="space-y-2 mb-4">
           <Label className="text-sm">Carpeta de destino</Label>
           <div className="flex gap-2">
-            <div className="flex-1 px-3 py-2 bg-gray-50 border rounded text-sm text-gray-600 truncate min-w-0">
+            <div 
+              className="flex-1 px-3 py-2 bg-gray-50 border rounded text-sm text-gray-600 truncate min-w-0 cursor-help"
+              title={outputFolder || "No se ha seleccionado ninguna carpeta"}
+            >
               {outputFolder || "Seleccionar..."}
             </div>
               <Button
