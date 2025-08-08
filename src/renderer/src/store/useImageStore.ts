@@ -9,12 +9,16 @@ export const useImageStore = create<ImageStore>((set) => ({
     quality: 80,
     outputFolder: '',
     imageToShow: '',
+    isFolderConversion: false,    
+    sourceFolderPath: '',         
     setImageToShow: (image) => set({ imageToShow: image }),
     setImages: (images: ImageFile[]) => set({ images }),
     setIsConverting: (isConverting: boolean) => set({ isConverting }),
     setQuality: (quality: number) => set({ quality }),
     setOutputFolder: (folder: string) => set({ outputFolder: folder }),
     setOutputFormat: (format: OutputFormat) => set({ outputFormat: format }),
+    setIsFolderConversion: (isFolderConversion: boolean) => set({ isFolderConversion }),  
+    setSourceFolderPath: (path: string) => set({ sourceFolderPath: path }),              
 
     updateImageStatus: (path, status,progress) => set((state) => ({
         images: state.images.map((img) =>

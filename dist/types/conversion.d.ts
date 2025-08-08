@@ -5,6 +5,8 @@ export interface ConversionOptions {
     quality: number;
     outputFolder: string;
     images: ImageFile[];
+    isFolderConversion: boolean;
+    folderPath?: string;
 }
 export interface ConversionResult {
     success: boolean;

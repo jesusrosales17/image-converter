@@ -3,7 +3,7 @@ import { isValidImageExtension } from "@/utils/image";
 import { toast } from "sonner";
 
 export const useConverter = () => {
-    const { outputFormat, quality, outputFolder, images } = useImageStore();
+    const { outputFormat, quality, outputFolder, images, isFolderConversion, sourceFolderPath } = useImageStore();
 
     const startConversion = async () => {
         if(!images || images.length === 0) {
@@ -33,7 +33,9 @@ export const useConverter = () => {
                 images,
                 outputFormat,
                 quality,
-                outputFolder
+                outputFolder,
+                isFolderConversion,   
+                folderPath: sourceFolderPath  
             });
 
             // Ya no necesitas actualizar manualmente aquí

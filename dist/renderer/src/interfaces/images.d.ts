@@ -23,12 +23,16 @@ export interface ImageStore {
     quality: number;
     outputFolder: string;
     imageToShow?: string;
+    isFolderConversion: boolean;
+    sourceFolderPath: string;
     setImages: (images: ImageFile[]) => void;
     setIsConverting: (isConverting: boolean) => void;
     setQuality: (quality: number) => void;
     setOutputFolder: (folder: string) => void;
     setOutputFormat: (format: OutputFormat) => void;
     setImageToShow: (image: string) => void;
+    setIsFolderConversion: (isFolderConversion: boolean) => void;
+    setSourceFolderPath: (path: string) => void;
     updateImageStatus: (path: string, status: StatusImage, progress: number) => void;
     addImage: (image: ImageFile) => void;
     removeImage: (path: string) => void;

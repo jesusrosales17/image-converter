@@ -42,6 +42,33 @@ const fs_1 = __importDefault(require("fs"));
 const image_1 = require("../renderer/src/utils/image");
 const images_1 = require("../../dist/renderer/src/interfaces/images");
 const sharp_1 = __importDefault(require("sharp"));
+const scanFolderForImages = async (folderPath) => {
+    const imagePaths = [];
+    const scanDirectory = async (dirPath) => {
+        try {
+            const items = await fs_1.default.promises.readdir(dirPath, { withFileTypes: true });
+            for (const item of items) {
+                const fullPath = path.join(dirPath, item.name);
+                if (item.isDirectory()) {
+                    // Recursivamente escanear subdirectorios
+                    await scanDirectory(fullPath);
+                }
+                else if (item.isFile()) {
+                    // Verificar si es una imagen
+                    const ext = path.extname(item.name).toLowerCase();
+                    if (['.jpg', '.jpeg', '.png', '.webp', '.avif', '.tiff'].includes(ext)) {
+                        imagePaths.push(fullPath);
+                    }
+                }
+            }
+        }
+        catch (error) {
+            console.error(`Error scanning directory ${dirPath}:`, error);
+        }
+    };
+    await scanDirectory(folderPath);
+    return imagePaths;
+};
 function createWindow() {
     const windows = new electron_1.BrowserWindow({
         width: 1000,
@@ -59,6 +86,33 @@ function createWindow() {
 // ipcMain es el proceso principal de Electron que maneja la comunicación entre el proceso principal y los procesos de renderizado
 electron_1.ipcMain.handle('dialog:open', async (_, options) => {
     const result = await electron_1.dialog.showOpenDialog(options);
+    const isModalDirectory = options.properties?.includes('openDirectory');
+    if (isModalDirectory) {
+        if (result.canceled || result.filePaths.length === 0) {
+            return { canceled: result.canceled, files: [] };
+        }
+        const selectedFolderPath = result.filePaths[0];
+        // Scan the selected folder for images
+        const imagePaths = await scanFolderForImages(selectedFolderPath);
+        const files = await Promise.all(imagePaths.map(async (filePath) => {
+            const stat = fs_1.default.statSync(filePath);
+            const type = (0, image_1.getImageExtension)(filePath);
+            return {
+                path: filePath,
+                name: path.basename(filePath),
+                size: stat.size,
+                type: type,
+                status: images_1.StatusImage.pending,
+                progress: 0
+            };
+        }));
+        return {
+            canceled: result.canceled,
+            files,
+            folderPath: selectedFolderPath,
+            isFolderSelection: true
+        };
+    }
     const files = await Promise.all(result.filePaths.map(async (filePath) => {
         const stat = fs_1.default.statSync(filePath); // para obtener el tamaño
         const type = (0, image_1.getImageExtension)(filePath);
@@ -106,7 +160,7 @@ electron_1.ipcMain.handle('dialog:openFolderForOutput', async (_, options) => {
     }
     return '';
 });
-electron_1.ipcMain.handle('convert:images', async (event, { images, outputFormat, quality, outputFolder }) => {
+electron_1.ipcMain.handle('convert:images', async (event, { images, outputFormat, quality, outputFolder, isFolderConversion, folderPath }) => {
     let convertedCount = 0;
     let failedCount = 0;
     let results = [];
@@ -120,17 +174,20 @@ electron_1.ipcMain.handle('convert:images', async (event, { images, outputFormat
     if (!fs_1.default.existsSync(outputFolder)) {
         throw new Error("La carpeta de salida no existe");
     }
+    // Si es conversión por carpeta, usar folderPath directamente
+    const isConversionByFolder = isFolderConversion || (folderPath && fs_1.default.existsSync(folderPath));
+    const baseFolderPath = folderPath || ''; // ✅ folderPath ES el ancestro común más profundo
     // enviar el evento de inicio de la conversion
     event.sender.send('conversion:started', {
         total: images.length,
         outputFormat,
-        outputFolder
+        outputFolder,
+        isFolderConversion: isConversionByFolder
     });
     // procesar las imagenes una por una
     for (let i = 0; i < images.length; i++) {
         const image = images[i];
         try {
-            // ✅ Arreglar typo: convension → conversion
             event.sender.send('conversion:imageStarted', {
                 imagePath: image.path,
                 currentIndex: i + 1,
@@ -138,7 +195,25 @@ electron_1.ipcMain.handle('convert:images', async (event, { images, outputFormat
             });
             const inputPath = image.path;
             const baseName = path.basename(inputPath, path.extname(inputPath));
-            const outputPath = path.join(outputFolder, `${baseName}.${outputFormat}`);
+            let outputPath;
+            if (isConversionByFolder && baseFolderPath) {
+                // Obtener la ruta relativa desde la carpeta base
+                const relativePath = path.relative(baseFolderPath, inputPath);
+                const relativeDir = path.dirname(relativePath);
+                // Crear la estructura de carpetas en el destino
+                const outputDir = relativeDir === '.'
+                    ? outputFolder
+                    : path.join(outputFolder, relativeDir);
+                // Crear directorio si no existe
+                if (!fs_1.default.existsSync(outputDir)) {
+                    await fs_1.default.promises.mkdir(outputDir, { recursive: true });
+                }
+                outputPath = path.join(outputDir, `${baseName}.${outputFormat}`);
+            }
+            else {
+                // 📄 Conversión individual - guardar directamente en carpeta de salida
+                outputPath = path.join(outputFolder, `${baseName}.${outputFormat}`);
+            }
             // validar que la imagen del mismo tipo no este en la misma ruta de salida
             if (fs_1.default.existsSync(outputPath)) {
                 // si la imagen es del mismo tipo a convertir marcar automaticamente en completada
@@ -159,13 +234,8 @@ electron_1.ipcMain.handle('convert:images', async (event, { images, outputFormat
             }
             let sharpInstance = (0, sharp_1.default)(inputPath);
             switch (outputFormat) {
-                case 'jpeg': // ✅ Agregar soporte para 'jpg'
-                    sharpInstance = sharpInstance.jpeg({
-                        quality,
-                        progressive: true,
-                        mozjpeg: true
-                    });
-                case 'jpg': // ✅ Agregar soporte para 'jpg'
+                case 'jpeg':
+                case 'jpg': // ✅ Ambos casos usan la misma lógica
                     sharpInstance = sharpInstance.jpeg({
                         quality,
                         progressive: true,

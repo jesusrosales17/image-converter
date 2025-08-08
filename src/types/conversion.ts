@@ -6,6 +6,12 @@ export interface ConversionOptions {
     quality: number;
     outputFolder: string;
     images: ImageFile[];
+
+
+    // verificar si es por carpeta
+    isFolderConversion: boolean;
+    // si es por carpeta, la ruta de la carpeta
+    folderPath?: string;
 }
 export interface ConversionResult {
   success: boolean;

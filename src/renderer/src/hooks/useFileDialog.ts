@@ -6,7 +6,7 @@ import { useCallback } from 'react';
 
 
 export const useFileDialog = () => {
-    const {addImage, setOutputFolder} = useImageStore();
+    const {addImage, setOutputFolder, clearImages, setIsFolderConversion, setSourceFolderPath} = useImageStore();
   const openSingleFileDialog = useCallback(async () => {
     try {
       const result: DialogResult = await window.electron.ipcRenderer.invoke('dialog:open', {
@@ -56,8 +56,17 @@ export const useFileDialog = () => {
       });
       
       if (result && !result.canceled && result.files.length > 0) {
-        // Para carpetas, necesitarías implementar lógica adicional
-        // para escanear los archivos de imagen dentro de la carpeta
+        clearImages(); // Limpiar imágenes antes de agregar nuevas
+        
+        setIsFolderConversion(true);
+        if (result.folderPath) {
+          setSourceFolderPath(result.folderPath);
+        }
+        
+        result.files.forEach(image=> {
+          addImage(image);
+        });
+        
         return result.files;
       }
       
@@ -66,7 +75,7 @@ export const useFileDialog = () => {
       console.error('Error opening folder dialog:', error);
       return [];
     }
-  }, []);
+  }, [clearImages, addImage, setIsFolderConversion, setSourceFolderPath]);
 
   // abrir dialogo de folder pero para optener ruta de salida
   const openFolderDialogForOutput = useCallback(async () => {
