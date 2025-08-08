@@ -1,7 +1,7 @@
 {
   "name": "convertidor_imagenes",
   "version": "1.0.0",
-  "description": "Conversor de imágenes con Electron - Convierte entre diferentes formatos con calidad profesional",
+  "description": "Conversor de imágenes - Convierte entre diferentes formatos con calidad profesional",
   "main": "dist/main/main.js",
   "homepage": "https://github.com/jesusrosales17/image-converter",
   "author": {
@@ -31,8 +31,7 @@
     "dist:win": "npm run prepare:sharp:win && npm run build:all && electron-builder --win --publish=never",
     "dist:linux": "npm run prepare:sharp:linux && npm run build:all && electron-builder --linux --publish=never",
     "dist:mac": "npm run prepare:sharp:mac && npm run build:all && electron-builder --mac --publish=never",
-    "publish": "npm run rebuild && npm run build:all && electron-builder --publish=always",
-    "postinstall": "electron-builder install-app-deps"
+    "publish": "npm run rebuild && npm run build:all && electron-builder --publish=always"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
@@ -51,8 +50,8 @@
     "ts-node": "^10.9.2"
   },
   "build": {
-    "appId": "com.jesusrosales.convertidor-imagenes",
-    "productName": "Convertidor de Imágenes",
+    "appId": "com.jesusrosales.image-converter",
+    "productName": "Image Converter",
     "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
     "copyright": "Copyright © 2025 Jesus Rosales Castillo",
     "directories": {

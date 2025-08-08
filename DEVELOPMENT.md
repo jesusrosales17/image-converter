@@ -4,17 +4,17 @@
 
 ```bash
 # Instalar dependencias
-pnpm install
-cd src/renderer && pnpm install && cd ../..
+npm install
+cd src/renderer && npm install && cd ../..
 
 # Desarrollo
-pnpm run dev
+npm run dev
 
 # Build completo
-pnpm run build:all
+npm run build:all
 
 # Build para distribución
-pnpm run dist
+npm run dist
 ```
 
 ## 🔧 Configuración del Entorno
@@ -70,63 +70,37 @@ src/
 4. **Conversión**: Procesamiento por lotes con feedback en tiempo real
 5. **Resultado**: Estado actualizado y notificaciones
 
-## 🎯 Features Implementadas
-
-### Completadas
-
-- [x] Escaneo recursivo de carpetas
-- [x] Múltiples modos de selección
-- [x] Limpieza automática al cambiar modos
-- [x] Generación de previews robusta
-- [x] Conversión con Sharp (JPEG, PNG, WebP, AVIF, TIFF)
-- [x] Mantenimiento de estructura de carpetas
-- [x] Auto-updater configurado
-- [x] UI moderna con Shadcn/ui
-- [x] Estado global con Zustand
-- [x] Feedback en tiempo real
-- [x] Documentación completa
-
-### 🎯 Pendientes/Mejoras
-
-- [ ] Tests automatizados
-- [ ] Configuraciones avanzadas (redimensionado, filtros)
-- [ ] Soporte para más formatos (BMP, GIF)
-- [ ] Procesamiento en worker threads
-- [ ] Drag & drop mejorado
-- [ ] Historial de conversiones
-- [ ] Perfiles de configuración guardados
-
 ## 🛠️ Comandos de Build
 
 ### Desarrollo
 
 ```bash
-pnpm run dev          # Desarrollo con hot reload
-pnpm run watch        # Solo watch del TypeScript
+npm run dev          # Desarrollo con hot reload
+npm run watch        # Solo watch del TypeScript
 ```
 
 ### Build
 
 ```bash
-pnpm run build:all       # Build completo (main + renderer)
-pnpm run build:renderer  # Solo renderer
-pnpm run build           # Solo main process
+npm run build:all       # Build completo (main + renderer)
+npm run build:renderer  # Solo renderer
+npm run build           # Solo main process
 ```
 
 ### Distribución
 
 ```bash
-pnpm run dist           # Build sin publicar
-pnpm run dist:linux     # Solo Linux
-pnpm run publish        # Build y publicar a GitHub
+npm run dist           # Build sin publicar
+npm run dist:linux     # Solo Linux
+npm run publish        # Build y publicar a GitHub
 ```
 
 ### Específicos por plataforma
 
 ```bash
-pnpm run electron:build:linux   # Linux (AppImage, DEB, RPM)
-pnpm run electron:build:win     # Windows (NSIS, Portable)
-pnpm run electron:build:mac     # macOS (DMG, ZIP)
+npm run electron:build:linux   # Linux (AppImage, DEB, RPM)
+npm run electron:build:win     # Windows (NSIS, Portable)
+npm run electron:build:mac     # macOS (DMG, ZIP)
 ```
 
 ## 🔧 Configuración de Auto-updater
@@ -155,7 +129,7 @@ Para configurar auto-actualizaciones en tu propio repositorio:
 
 3. **Publicar release**:
    ```bash
-   pnpm run publish
+   npm run publish
    ```
 
 ## 🐛 Debug
@@ -164,10 +138,10 @@ Para configurar auto-actualizaciones en tu propio repositorio:
 
 ```bash
 # Con DevTools
-ELECTRON_IS_DEV=1 pnpm run dev
+ELECTRON_IS_DEV=1 npm run dev
 
 # Con logs
-DEBUG=* pnpm run dev
+DEBUG=* npm run dev
 ```
 
 ### Renderer Process
