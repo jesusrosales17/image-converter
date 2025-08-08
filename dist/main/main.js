@@ -129,27 +129,71 @@ electron_1.ipcMain.handle('dialog:open', async (_, options) => {
 });
 // generar una vista previa de la imagen en base 64
 electron_1.ipcMain.handle('imagePreview:get', async (_, filePath) => {
-    try {
-        if (!fs_1.default.existsSync(filePath)) {
-            throw new Error('El archivo no existe');
+    const maxRetries = 3;
+    let lastError = null;
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            if (!fs_1.default.existsSync(filePath)) {
+                throw new Error('El archivo no existe');
+            }
+            const ext = path.extname(filePath).toLowerCase();
+            if (attempt > 1) {
+                await new Promise(resolve => setTimeout(resolve, 100 * attempt));
+            }
+            let sharpInstance = (0, sharp_1.default)(filePath);
+            if (ext === '.tiff' || ext === '.tif') {
+                sharpInstance = sharpInstance
+                    .ensureAlpha(0) // Normalizar canal alpha
+                    .toColorspace('srgb'); // Forzar espacio de color estándar
+            }
+            const data = await Promise.race([
+                sharpInstance
+                    .resize(800, 800, {
+                    fit: 'inside',
+                    withoutEnlargement: true,
+                    kernel: sharp_1.default.kernel.lanczos3 // Mejor algoritmo de redimensionado
+                })
+                    .jpeg({
+                    quality: 85,
+                    progressive: true,
+                    mozjpeg: false,
+                    optimizeCoding: true,
+                    overshootDeringing: false
+                })
+                    .toBuffer(),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout generating preview')), 10000))
+            ]);
+            if (!data || data.length === 0) {
+                throw new Error('Preview data is empty');
+            }
+            const base64 = `data:image/jpeg;base64,${data.toString('base64')}`;
+            // ✅ Validar que el base64 es válido
+            if (!base64 || base64.length < 100) {
+                throw new Error('Invalid base64 data generated');
+            }
+            return {
+                preview: base64,
+                name: path.basename(filePath)
+            };
         }
-        const data = await (0, sharp_1.default)(filePath).toBuffer();
-        const ext = path.extname(filePath).slice(1); // sin el punto
-        const mime = ext === 'jpg' ? 'jpeg' : ext;
-        const base64 = `data:image/${mime};base64,${data.toString('base64')}`;
-        return {
-            preview: base64,
-            name: path.basename(filePath)
-        };
+        catch (error) {
+            lastError = error;
+            const filename = path.basename(filePath);
+            // Si no es el último intento, continuar con el siguiente
+            if (attempt < maxRetries) {
+                continue;
+            }
+        }
     }
-    catch (error) {
-        console.error('Error loading image preview:', error);
-        return {
-            preview: '',
-            error: "Error al obtener la vista previa de la imagen",
-            name: path.basename(filePath)
-        };
-    }
+    // Si llegamos aquí, todos los intentos fallaron
+    const filename = path.basename(filePath);
+    const ext = path.extname(filePath).toUpperCase();
+    console.error(`❌ Error generando preview para ${filename} después de ${maxRetries} intentos:`, lastError);
+    return {
+        preview: '',
+        error: `No se pudo generar preview para ${ext} después de ${maxRetries} intentos`,
+        name: filename
+    };
 });
 // optener ruta de la carpeta del destino
 electron_1.ipcMain.handle('dialog:openFolderForOutput', async (_, options) => {
@@ -234,9 +278,15 @@ electron_1.ipcMain.handle('convert:images', async (event, { images, outputFormat
                 continue;
             }
             let sharpInstance = (0, sharp_1.default)(inputPath);
+            const inputExt = path.extname(inputPath).toLowerCase();
+            if (inputExt === '.tiff' || inputExt === '.tif') {
+                sharpInstance = sharpInstance
+                    .ensureAlpha(0) // Normalizar canal alpha
+                    .toColorspace('srgb'); // Forzar espacio de color estándar
+            }
             switch (outputFormat) {
                 case 'jpeg':
-                case 'jpg': // ✅ Ambos casos usan la misma lógica
+                case 'jpg':
                     sharpInstance = sharpInstance.jpeg({
                         quality,
                         progressive: true,
@@ -251,7 +301,6 @@ electron_1.ipcMain.handle('convert:images', async (event, { images, outputFormat
                     break;
                 case 'png':
                     sharpInstance = sharpInstance.png({
-                        quality,
                         compressionLevel: 6,
                         progressive: true
                     });
