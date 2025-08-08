@@ -130,16 +130,17 @@ electron_1.ipcMain.handle('dialog:open', async (_, options) => {
 // generar una vista previa de la imagen en base 64
 electron_1.ipcMain.handle('imagePreview:get', async (_, filePath) => {
     try {
-        if (fs_1.default.existsSync(filePath)) {
-            const image = electron_1.nativeImage.createFromPath(filePath);
-            return {
-                preview: image.toDataURL(),
-                name: path.basename(filePath)
-            };
+        if (!fs_1.default.existsSync(filePath)) {
+            throw new Error('El archivo no existe');
         }
-        else {
-            throw new Error('File does not exist');
-        }
+        const data = await (0, sharp_1.default)(filePath).toBuffer();
+        const ext = path.extname(filePath).slice(1); // sin el punto
+        const mime = ext === 'jpg' ? 'jpeg' : ext;
+        const base64 = `data:image/${mime};base64,${data.toString('base64')}`;
+        return {
+            preview: base64,
+            name: path.basename(filePath)
+        };
     }
     catch (error) {
         console.error('Error loading image preview:', error);

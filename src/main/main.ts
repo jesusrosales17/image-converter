@@ -109,24 +109,28 @@ ipcMain.handle('dialog:open', async (_, options): Promise<DialogResult> => {
 
 // generar una vista previa de la imagen en base 64
 ipcMain.handle('imagePreview:get', async (_, filePath: string): Promise<ImagePreviewResult> => {
-    try {
-        if (fs.existsSync(filePath)) {
-            const image = nativeImage.createFromPath(filePath);
-            return {
-                preview: image.toDataURL(),
-                name: path.basename(filePath)
-            };
-        } else {
-            throw new Error('File does not exist');
-        }
-    } catch (error) {
-        console.error('Error loading image preview:', error);
-        return {
-            preview: '',
-            error: "Error al obtener la vista previa de la imagen",
-            name: path.basename(filePath)
-        };
+   try {
+    if (!fs.existsSync(filePath)) {
+      throw new Error('El archivo no existe');
     }
+
+    const data = await sharp(filePath).toBuffer();
+    const ext = path.extname(filePath).slice(1); // sin el punto
+    const mime = ext === 'jpg' ? 'jpeg' : ext;
+    const base64 = `data:image/${mime};base64,${data.toString('base64')}`;
+
+    return {
+      preview: base64,
+      name: path.basename(filePath)
+    };
+  } catch (error) {
+    console.error('Error loading image preview:', error);
+    return {
+      preview: '',
+      error: "Error al obtener la vista previa de la imagen",
+      name: path.basename(filePath)
+    };
+  } 
 })
 
 

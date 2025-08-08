@@ -43,6 +43,7 @@ export const useFileDialog = () => {
       });
 
       if (result && !result.canceled && result.files.length > 0) {
+        console.log(isFolderConversion);
         if (isFolderConversion) {
           clearImages(); // Limpiar imágenes antes de agregar nuevas
           setIsFolderConversion(false);
