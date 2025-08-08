@@ -1,5 +1,3 @@
-
-
 "use client";
 
 import { useState } from "react";
@@ -23,8 +21,8 @@ export const Header = () => {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             size="sm"
             onClick={() => setShowInfo(true)}
             className="flex items-center gap-2"
@@ -36,10 +34,7 @@ export const Header = () => {
       </div>
       {/* Notificación de actualización */}
       <UpdateNotification />
-      <InfoModal 
-        isOpen={showInfo} 
-        onClose={() => setShowInfo(false)} 
-      />
+      <InfoModal isOpen={showInfo} onClose={() => setShowInfo(false)} />
     </div>
   );
 };

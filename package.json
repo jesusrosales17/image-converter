@@ -31,7 +31,10 @@
     "dist:win": "npm run prepare:sharp:win && npm run build:all && electron-builder --win --publish=never",
     "dist:linux": "npm run prepare:sharp:linux && npm run build:all && electron-builder --linux --publish=never",
     "dist:mac": "npm run prepare:sharp:mac && npm run build:all && electron-builder --mac --publish=never",
-    "publish": "npm run rebuild && npm run build:all && electron-builder --publish=always"
+    "publish": "npm run rebuild && npm run build:all && electron-builder --publish=always",
+    "publish:win": "npm run prepare:sharp:win && npm run build:all && electron-builder --win --publish=always",
+    "publish:linux": "npm run prepare:sharp:linux && npm run build:all && electron-builder --linux --publish=always",
+    "publish:mac": "npm run prepare:sharp:mac && npm run build:all && electron-builder --mac --publish=always"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
