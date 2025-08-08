@@ -1,10 +1,12 @@
 
+
 "use client";
 
 import { useState } from "react";
 import { Button } from "../ui/button";
 import { Info } from "lucide-react";
 import { InfoModal } from "./InfoModal";
+import { UpdateNotification } from "./UpdateNotification";
 
 export const Header = () => {
   const [showInfo, setShowInfo] = useState(false);
@@ -32,7 +34,8 @@ export const Header = () => {
           </Button>
         </div>
       </div>
-      
+      {/* Notificación de actualización */}
+      <UpdateNotification />
       <InfoModal 
         isOpen={showInfo} 
         onClose={() => setShowInfo(false)} 

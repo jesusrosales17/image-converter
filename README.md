@@ -97,7 +97,6 @@ export GH_TOKEN="tu-github-token"
 pnpm run publish
 ```
 
-
 ## 📥 Descargas
 
 ### Windows

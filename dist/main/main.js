@@ -37,6 +37,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const electron_1 = require("electron");
+const electron_updater_1 = require("electron-updater");
 const path = __importStar(require("path"));
 const shared_1 = require("../types/shared");
 const utils_1 = require("../types/utils");
@@ -119,8 +120,28 @@ async function initializeSharp() {
 }
 // Inicializar Sharp al arrancar
 initializeSharp();
-//   Configurar auto-updater - comentado temporalmente hasta tener releases en GitHub
-// autoUpdater.checkForUpdatesAndNotify();
+// Configurar auto-actualizaciones
+electron_1.app.on('ready', () => {
+    // Solo buscar actualizaciones en producción
+    if (electron_1.app.isPackaged) {
+        electron_updater_1.autoUpdater.checkForUpdatesAndNotify();
+    }
+});
+// Notificar al renderer si hay una actualización disponible
+electron_updater_1.autoUpdater.on('update-available', (info) => {
+    electron_1.BrowserWindow.getAllWindows().forEach(win => {
+        win.webContents.send('update:available', info);
+    });
+});
+electron_updater_1.autoUpdater.on('update-downloaded', (info) => {
+    electron_1.BrowserWindow.getAllWindows().forEach(win => {
+        win.webContents.send('update:downloaded', info);
+    });
+});
+// Permitir al renderer forzar la instalación de la actualización
+electron_1.ipcMain.on('update:install', () => {
+    electron_updater_1.autoUpdater.quitAndInstall();
+});
 const scanFolderForImages = async (folderPath) => {
     const imagePaths = [];
     const scanDirectory = async (dirPath) => {

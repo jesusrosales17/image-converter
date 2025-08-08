@@ -1,4 +1,5 @@
 import { BrowserWindow, app, ipcMain, dialog } from "electron";
+import { autoUpdater } from "electron-updater";
 import * as path from "path";
 import { DialogResult, ImagePreviewResult, ImageFile, StatusImage } from '../types/shared';
 import { getImageExtension } from '../types/utils';
@@ -85,11 +86,35 @@ async function initializeSharp() {
   }
 }
 
+
 // Inicializar Sharp al arrancar
 initializeSharp();
 
-//   Configurar auto-updater - comentado temporalmente hasta tener releases en GitHub
-// autoUpdater.checkForUpdatesAndNotify();
+// Configurar auto-actualizaciones
+app.on('ready', () => {
+  // Solo buscar actualizaciones en producción
+  if (app.isPackaged) {
+    autoUpdater.checkForUpdatesAndNotify();
+  }
+});
+
+// Notificar al renderer si hay una actualización disponible
+autoUpdater.on('update-available', (info) => {
+  BrowserWindow.getAllWindows().forEach(win => {
+    win.webContents.send('update:available', info);
+  });
+});
+
+autoUpdater.on('update-downloaded', (info) => {
+  BrowserWindow.getAllWindows().forEach(win => {
+    win.webContents.send('update:downloaded', info);
+  });
+});
+
+// Permitir al renderer forzar la instalación de la actualización
+ipcMain.on('update:install', () => {
+  autoUpdater.quitAndInstall();
+});
 
 const scanFolderForImages = async (folderPath: string): Promise<string[]> => {
   const imagePaths: string[] = [];
